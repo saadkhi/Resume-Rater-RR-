@@ -1,0 +1,68 @@
+{
+  "users": [
+    {
+      "id": "usr_demo_001",
+      "email": "candidate@example.com",
+      "name": "Demo Candidate",
+      "role": "user",
+      "createdAt": "2026-10-06T06:45:59.413Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "sub_demo_001",
+      "userId": "usr_demo_001",
+      "stripeCustomerId": "cus_demo_usr_demo_001",
+      "stripeSubscriptionId": null,
+      "stripePriceId": null,
+      "planTier": "free",
+      "status": "inactive",
+      "currentPeriodEnd": null,
+      "cancelAtPeriodEnd": false,
+      "updatedAt": "2026-10-06T06:46:29.669Z",
+      "createdAt": "2026-10-06T06:45:59.413Z"
+    }
+  ],
+  "user_usage": [
+    {
+      "id": "usg_demo_001",
+      "userId": "usr_demo_001",
+      "monthYear": "2026-10",
+      "scansUsed": 1,
+      "maxFreeScans": 3,
+      "updatedAt": "2026-10-06T12:23:00.039Z"
+    }
+  ],
+  "resumes": [],
+  "evaluations": [],
+  "webhook_events": [
+    {
+      "id": "evt_sim_1791269174502",
+      "eventType": "checkout.session.completed",
+      "payload": {
+        "object": {
+          "client_reference_id": "usr_demo_001",
+          "customer": "cus_sim_usr_demo_001",
+          "subscription": "sub_sim_1791269174502",
+          "metadata": {
+            "userId": "usr_demo_001",
+            "planType": "monthly"
+          }
+        }
+      },
+      "status": "processed",
+      "receivedAt": "2026-10-06T06:46:14.503Z"
+    },
+    {
+      "id": "evt_sim_1791269174574",
+      "eventType": "customer.subscription.deleted",
+      "payload": {
+        "object": {
+          "customer": "cus_sim_usr_demo_001"
+        }
+      },
+      "status": "processed",
+      "receivedAt": "2026-10-06T06:46:14.575Z"
+    }
+  ]
+}

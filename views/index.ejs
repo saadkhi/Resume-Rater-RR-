@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume and Job Description Evaluator</title>
-    <meta name="description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts category, and rates match similarity against job descriptions.">
-    <meta property="og:title" content="Resume and Job Description Evaluator">
-    <meta property="og:description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts category, and rates match similarity against job descriptions.">
-    
+    <title>Resume Rater · Professional ATS & Career Intelligence Dashboard</title>
+    <meta name="description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts career category, and rates match similarity against job descriptions with Recharts analytics.">
+    <meta property="og:title" content="Resume Rater · Professional ATS & Career Intelligence Dashboard">
+    <meta property="og:description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts career category, and rates match similarity against job descriptions with Recharts analytics.">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -42,12 +42,12 @@
             font-family: var(--font-sans);
             background-color: var(--bg-canvas);
             color: var(--text-primary);
-            line-height: 1.6;
+            line-height: 1.55;
             -webkit-font-smoothing: antialiased;
             min-height: 100vh;
         }
 
-        /* Top Bar Contract: 3 zones */
+        /* Top Bar Contract (3 zones) */
         .top-bar {
             height: 64px;
             background: var(--surface-card);
@@ -63,13 +63,13 @@
 
         .brand-wordmark {
             font-size: 1.125rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
+            font-weight: 800;
+            letter-spacing: -0.025em;
             color: var(--text-primary);
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
 
         .brand-wordmark svg {
@@ -79,7 +79,7 @@
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.75rem;
         }
 
         .nav-link {
@@ -88,77 +88,142 @@
             color: var(--text-secondary);
             text-decoration: none;
             transition: color 0.15s ease;
+            cursor: pointer;
         }
 
         .nav-link:hover {
             color: var(--text-primary);
         }
 
-        .top-action-btn {
+        .nav-link.active {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .quota-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .quota-text {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .quota-badge-free {
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-hairline);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        .quota-badge-pro {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #15803d;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .btn-upgrade-nav {
             font-size: 0.8125rem;
             font-weight: 600;
             color: #ffffff;
-            background: var(--text-primary);
+            background: var(--accent-primary);
             padding: 0.5rem 1rem;
             border-radius: 6px;
             border: none;
             cursor: pointer;
             transition: background 0.15s ease;
-            text-decoration: none;
             white-space: nowrap;
         }
 
-        .top-action-btn:hover {
-            background: #1e293b;
+        .btn-upgrade-nav:hover {
+            background: var(--accent-primary-hover);
         }
 
-        /* Main Container */
+        /* Main Workspace */
         .main-container {
-            max-width: 1120px;
+            max-width: 1320px;
             margin: 0 auto;
-            padding: 2.5rem 1.5rem 5rem;
+            padding: 2rem 1.5rem 5rem;
         }
 
         /* Hero Header */
         .hero-section {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
             margin-bottom: 2rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border-hairline);
         }
 
         .hero-title {
-            font-size: 1.875rem;
-            font-weight: 700;
+            font-size: 1.75rem;
+            font-weight: 800;
             letter-spacing: -0.03em;
             color: var(--text-primary);
-            margin-bottom: 0.5rem;
-            text-wrap: balance;
+            line-height: 1.2;
         }
 
         .hero-subtitle {
-            font-size: 0.9375rem;
+            font-size: 0.875rem;
             color: var(--text-muted);
+            margin-top: 0.35rem;
             display: flex;
             align-items: center;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
 
-        .hero-separator {
-            color: var(--border-hairline);
+        .hero-meta-strip {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        /* Grid Layout */
+        .hero-meta-item {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        /* Split-Pane Grid Architecture */
         .workspace-grid {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
+            grid-template-columns: 380px 1fr;
+            gap: 1.75rem;
+            align-items: start;
         }
 
-        /* Card Surface */
+        @media (max-width: 1080px) {
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left Column: Upload & Configuration Card */
         .surface-card {
             background: var(--surface-card);
             border: 1px solid var(--border-hairline);
             border-radius: 12px;
-            padding: 1.75rem;
+            padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
         }
 
@@ -167,13 +232,11 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 1.25rem;
-            padding-bottom: 0.875rem;
-            border-bottom: 1px solid var(--border-hairline);
         }
 
         .card-title {
-            font-size: 1.125rem;
-            font-weight: 600;
+            font-size: 1rem;
+            font-weight: 700;
             color: var(--text-primary);
             letter-spacing: -0.01em;
         }
@@ -181,17 +244,18 @@
         .card-caption {
             font-size: 0.8125rem;
             color: var(--text-muted);
+            margin-top: 0.15rem;
         }
 
-        /* Upload Component */
+        /* Interactive Dropzone */
         .dropzone-container {
-            border: 2px dashed var(--border-hairline);
+            border: 2px dashed #cbd5e1;
             border-radius: 10px;
-            padding: 2.5rem 1.5rem;
+            padding: 1.75rem 1rem;
             text-align: center;
-            background: var(--surface-subtle);
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            background: #fafafa;
+            transition: all 0.18s ease;
             position: relative;
         }
 
@@ -200,48 +264,7 @@
             background: var(--accent-light);
         }
 
-        .dropzone-icon {
-            width: 48px;
-            height: 48px;
-            color: var(--accent-primary);
-            margin: 0 auto 0.875rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .dropzone-headline {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0.25rem;
-        }
-
-        .dropzone-helper {
-            font-size: 0.8125rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        .browse-cta {
-            display: inline-block;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            color: var(--accent-primary);
-            background: #ffffff;
-            border: 1px solid var(--border-hairline);
-            padding: 0.5rem 1.25rem;
-            border-radius: 6px;
-            pointer-events: none;
-            transition: all 0.15s ease;
-        }
-
-        .dropzone-container:hover .browse-cta {
-            border-color: var(--accent-primary);
-            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.08);
-        }
-
-        #resumeFileInput {
+        .dropzone-container input[type="file"] {
             position: absolute;
             top: 0;
             left: 0;
@@ -249,16 +272,51 @@
             height: 100%;
             opacity: 0;
             cursor: pointer;
+            z-index: 10;
         }
 
-        /* Selected File Card */
-        .selected-file-card {
-            display: none;
+        .dropzone-icon {
+            color: #94a3b8;
+            margin-bottom: 0.65rem;
+            transition: color 0.18s ease;
+        }
+
+        .dropzone-container:hover .dropzone-icon {
+            color: var(--accent-primary);
+        }
+
+        .dropzone-headline {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .dropzone-helper {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .browse-cta {
+            display: inline-block;
+            margin-top: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-primary);
             background: #ffffff;
             border: 1px solid var(--border-hairline);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+        }
+
+        /* Selected File Metadata Card */
+        .selected-file-card {
+            display: none;
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-hairline);
             border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
             align-items: center;
             justify-content: space-between;
         }
@@ -267,114 +325,135 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            min-width: 0;
+            overflow: hidden;
         }
 
         .file-icon-box {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            background: #fee2e2;
-            color: #dc2626;
+            color: var(--accent-primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
         }
 
         .file-meta-text {
-            min-width: 0;
+            overflow: hidden;
         }
 
         .file-name {
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 600;
             color: var(--text-primary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            max-width: 200px;
         }
 
         .file-size {
             font-size: 0.75rem;
             color: var(--text-muted);
             font-family: var(--font-mono);
-        }
-
-        .file-action-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
         }
 
         .btn-remove {
             font-size: 0.75rem;
-            font-weight: 500;
             color: var(--status-error);
-            background: none;
+            background: transparent;
             border: none;
             cursor: pointer;
-            padding: 0.35rem 0.65rem;
-            border-radius: 4px;
+            font-weight: 600;
+            padding: 0.2rem 0.4rem;
         }
 
         .btn-remove:hover {
-            background: #fee2e2;
+            text-decoration: underline;
         }
 
-        /* Quick Samples Strip */
+        /* Samples Strip */
         .samples-strip {
             margin-top: 1.25rem;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            font-size: 0.8125rem;
-        }
-
-        .samples-label {
-            color: var(--text-muted);
-            margin-right: 0.25rem;
-        }
-
-        .sample-chip {
-            background: var(--surface-subtle);
-            border: 1px solid var(--border-hairline);
-            color: var(--text-secondary);
-            padding: 0.35rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.8125rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .sample-chip:hover {
-            background: #ffffff;
-            border-color: var(--text-secondary);
-            color: var(--text-primary);
-        }
-
-        /* Optional Job Match Inputs */
-        .optional-jd-section {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
+            padding-top: 1.25rem;
             border-top: 1px solid var(--border-hairline);
         }
 
+        .samples-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.65rem;
+        }
+
+        .samples-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .sample-chips-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .sample-chip {
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            color: var(--text-secondary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sample-chip:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background: var(--accent-light);
+        }
+
+        .sample-chip.active {
+            border-color: var(--accent-primary);
+            background: var(--accent-light);
+            color: var(--accent-primary);
+            box-shadow: 0 0 0 1px var(--accent-primary);
+        }
+
+        /* Target Job Role Accordion */
+        .optional-jd-section {
+            margin-top: 1.25rem;
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
         .section-toggle-header {
+            padding: 0.75rem 1rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             cursor: pointer;
+            background: #fafafa;
             user-select: none;
         }
 
+        .section-toggle-header:hover {
+            background: #f1f5f9;
+        }
+
         .section-toggle-title {
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--text-primary);
         }
 
         .section-toggle-chevron {
@@ -383,28 +462,29 @@
         }
 
         .jd-fields-wrap {
-            margin-top: 1rem;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            border-top: 1px solid var(--border-hairline);
         }
 
         .input-label {
             display: block;
-            font-size: 0.8125rem;
-            font-weight: 500;
+            font-size: 0.75rem;
+            font-weight: 600;
             color: var(--text-secondary);
             margin-bottom: 0.35rem;
         }
 
         .input-select, .input-textarea {
             width: 100%;
-            padding: 0.625rem 0.875rem;
+            padding: 0.55rem 0.75rem;
             background: #ffffff;
             border: 1px solid var(--border-hairline);
             border-radius: 6px;
             font-family: inherit;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             color: var(--text-primary);
             transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
@@ -415,94 +495,94 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
         }
 
-        /* Submit Action Row */
+        .input-textarea {
+            resize: vertical;
+            line-height: 1.45;
+        }
+
+        /* Primary Parse Button */
         .action-row {
-            margin-top: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            margin-top: 1.25rem;
         }
 
         .btn-primary {
-            background: var(--accent-primary);
+            width: 100%;
+            background: var(--text-primary);
             color: #ffffff;
             font-size: 0.875rem;
             font-weight: 600;
-            padding: 0.625rem 1.5rem;
-            border-radius: 6px;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
             border: none;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.5rem;
             transition: background 0.15s ease;
         }
 
         .btn-primary:hover:not(:disabled) {
-            background: var(--accent-primary-hover);
+            background: #1e293b;
         }
 
         .btn-primary:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
-        /* Progress / Loading Bar */
+        /* Loading / Progress Indicator */
         .progress-container {
             display: none;
-            margin-top: 1.25rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
             background: var(--surface-subtle);
-            border-radius: 8px;
-            padding: 1rem;
-            border: 1px solid var(--border-hairline);
+            border-radius: 6px;
         }
 
         .progress-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.8125rem;
-            font-weight: 500;
+            font-size: 0.75rem;
             color: var(--text-secondary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem;
         }
 
         .progress-bar-track {
-            height: 6px;
+            height: 4px;
             background: #e2e8f0;
-            border-radius: 3px;
+            border-radius: 2px;
             overflow: hidden;
-            position: relative;
         }
 
         .progress-bar-fill {
             height: 100%;
+            width: 50%;
             background: var(--accent-primary);
-            width: 30%;
-            border-radius: 3px;
-            transition: width 0.3s ease;
             animation: indeterminate 1.5s infinite linear;
         }
 
         @keyframes indeterminate {
-            0% { transform: translateX(-100%); width: 40%; }
-            50% { transform: translateX(50%); width: 60%; }
-            100% { transform: translateX(200%); width: 40%; }
+            0% { transform: translateX(-100%) scaleX(0.5); }
+            50% { transform: translateX(0%) scaleX(1); }
+            100% { transform: translateX(100%) scaleX(0.5); }
         }
 
-        /* Alert Banners */
+        /* Alert Boxes */
         .alert-box {
             display: none;
-            padding: 0.875rem 1rem;
-            border-radius: 8px;
             margin-top: 1rem;
-            font-size: 0.875rem;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8125rem;
+            line-height: 1.45;
         }
 
         .alert-box.error {
             background: #fef2f2;
             border: 1px solid #fecaca;
-            color: #991b1b;
+            color: #b91c1c;
         }
 
         .alert-box.success {
@@ -511,125 +591,116 @@
             color: #166534;
         }
 
-        /* Results Container */
-        .results-panel {
-            display: none;
-            margin-top: 2.5rem;
-        }
-
-        .results-panel.visible {
-            display: block;
-        }
-
-        /* Summary Header Banner */
-        .result-summary-card {
-            background: #ffffff;
-            border: 1px solid var(--border-hairline);
-            border-radius: 12px;
-            padding: 1.5rem 1.75rem;
-            margin-bottom: 1.5rem;
+        /* Right Column: Career Intelligence Dashboard Viewport */
+        .dashboard-viewport {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 1.5rem;
         }
 
-        .summary-role-col {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
+        /* Top Kicker Metric Cards */
+        .metrics-banner-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
         }
 
-        .summary-kicker {
+        .metric-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-hairline);
+            border-radius: 10px;
+            padding: 1.15rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .metric-card-header {
             font-size: 0.75rem;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
             color: var(--text-muted);
-        }
-
-        .summary-role-title {
-            font-size: 1.375rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            letter-spacing: -0.02em;
-        }
-
-        .summary-metrics-row {
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.35rem;
             display: flex;
             align-items: center;
-            gap: 2rem;
+            justify-content: space-between;
+        }
+
+        .metric-card-value {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            font-family: var(--font-mono);
             font-variant-numeric: tabular-nums;
         }
 
-        .metric-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .metric-val {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-        }
-
-        .metric-lbl {
+        .metric-card-caption {
             font-size: 0.75rem;
-            color: var(--text-muted);
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        /* Match Score Banner */
-        .match-badge-container {
-            display: flex;
+        .status-badge {
+            display: inline-flex;
             align-items: center;
-            gap: 1rem;
-            padding: 0.75rem 1.25rem;
-            background: var(--surface-subtle);
-            border-radius: 8px;
-            border: 1px solid var(--border-hairline);
-        }
-
-        .match-rating-text {
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-
-        .match-score-num {
-            font-size: 1.25rem;
+            gap: 0.3rem;
+            font-size: 0.75rem;
             font-weight: 700;
-            font-family: var(--font-mono);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
         }
 
-        .match-high { color: var(--status-success); }
-        .match-medium { color: var(--status-amber); }
-        .match-low { color: var(--text-secondary); }
+        .status-badge.high {
+            background: #dcfce7;
+            color: #15803d;
+        }
 
-        /* Segmented View Controls */
-        .segmented-tabs {
+        .status-badge.medium {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-badge.low {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* Tab Navigation Bar */
+        .workspace-tabs-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-hairline);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+        }
+
+        .tabs-header-bar {
+            padding: 0 1.25rem;
+            background: #fafafa;
+            border-bottom: 1px solid var(--border-hairline);
             display: flex;
             align-items: center;
-            gap: 0.25rem;
-            padding: 0.25rem;
-            background: var(--surface-subtle);
-            border: 1px solid var(--border-hairline);
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            width: fit-content;
+            gap: 0.5rem;
+            overflow-x: auto;
         }
 
         .tab-btn {
             background: transparent;
             border: none;
-            padding: 0.5rem 1rem;
+            padding: 0.85rem 1rem;
             font-size: 0.8125rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            border-radius: 6px;
+            font-weight: 600;
+            color: var(--text-muted);
             cursor: pointer;
+            border-bottom: 2px solid transparent;
             transition: all 0.15s ease;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
         }
 
         .tab-btn:hover {
@@ -637,13 +708,15 @@
         }
 
         .tab-btn.active {
-            background: #ffffff;
-            color: var(--text-primary);
-            font-weight: 600;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: transparent;
         }
 
-        /* Tab Panes */
+        .tab-content-area {
+            padding: 1.5rem;
+        }
+
         .tab-pane {
             display: none;
         }
@@ -652,23 +725,31 @@
             display: block;
         }
 
-        /* Sections Grid */
+        /* Extracted Sections Grid */
         .sections-grid {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 1.25rem;
         }
 
+        @media (max-width: 900px) {
+            .sections-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .section-box {
-            background: #ffffff;
+            background: var(--surface-card);
             border: 1px solid var(--border-hairline);
-            border-radius: 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
 
         .section-box-header {
-            padding: 0.875rem 1.25rem;
-            background: #f8fafc;
+            padding: 0.75rem 1rem;
+            background: #fafafa;
             border-bottom: 1px solid var(--border-hairline);
             display: flex;
             align-items: center;
@@ -676,20 +757,21 @@
         }
 
         .section-box-name {
-            font-size: 0.875rem;
-            font-weight: 600;
+            font-size: 0.8125rem;
+            font-weight: 700;
             color: var(--text-primary);
+            letter-spacing: -0.01em;
         }
 
         .btn-copy-section {
             font-size: 0.75rem;
-            font-weight: 500;
             color: var(--text-muted);
             background: #ffffff;
             border: 1px solid var(--border-hairline);
-            padding: 0.25rem 0.625rem;
+            padding: 0.2rem 0.5rem;
             border-radius: 4px;
             cursor: pointer;
+            font-weight: 500;
             transition: all 0.15s ease;
         }
 
@@ -699,110 +781,68 @@
         }
 
         .section-box-content {
-            padding: 1.25rem;
-            font-size: 0.875rem;
+            padding: 1rem;
+            font-size: 0.8125rem;
             color: var(--text-secondary);
-            white-space: pre-wrap;
             line-height: 1.6;
-            max-height: 280px;
+            max-height: 240px;
             overflow-y: auto;
-            font-family: var(--font-mono);
-            background: #ffffff;
+            white-space: pre-wrap;
+            font-family: inherit;
         }
 
         .section-box-content.empty {
             color: var(--text-muted);
             font-style: italic;
-            font-family: var(--font-sans);
         }
 
-        /* Raw / Cleaned Text Viewer */
-        .text-viewer-card {
-            background: #ffffff;
-            border: 1px solid var(--border-hairline);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .viewer-toolbar {
-            padding: 0.75rem 1.25rem;
-            background: #f8fafc;
-            border-bottom: 1px solid var(--border-hairline);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .viewer-code-pre {
-            padding: 1.25rem;
-            font-family: var(--font-mono);
-            font-size: 0.8125rem;
-            color: var(--text-primary);
-            white-space: pre-wrap;
-            max-height: 480px;
-            overflow-y: auto;
-            line-height: 1.65;
-            background: #fcfdfe;
-        }
-
-        /* Live Match Evaluator Tab */
-        .matcher-box {
-            background: #ffffff;
-            border: 1px solid var(--border-hairline);
-            border-radius: 10px;
-            padding: 1.5rem;
-        }
-
+        /* Real-Time Job Match Evaluator Tab */
         .matcher-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 320px;
             gap: 1.5rem;
-            margin-top: 1rem;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 850px) {
             .matcher-grid {
                 grid-template-columns: 1fr;
             }
-            .result-summary-card {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .summary-metrics-row {
-                gap: 1.25rem;
-            }
         }
 
-        .matcher-output-card {
-            background: var(--surface-subtle);
-            border: 1px solid var(--border-hairline);
-            border-radius: 8px;
-            padding: 1.25rem;
+        .matcher-left {
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            gap: 1rem;
+        }
+
+        .matcher-score-card {
+            background: #fafafa;
+            border: 1px solid var(--border-hairline);
+            border-radius: 10px;
+            padding: 1.5rem;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .score-circle {
-            width: 100px;
-            height: 100px;
+            width: 110px;
+            height: 110px;
             border-radius: 50%;
             background: #ffffff;
-            border: 4px solid var(--border-hairline);
+            border: 4px solid var(--accent-primary);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
-            margin-bottom: 0.75rem;
+            margin-bottom: 1rem;
         }
 
         .score-circle-num {
-            font-size: 1.5rem;
-            font-weight: 700;
+            font-size: 1.75rem;
+            font-weight: 800;
             font-family: var(--font-mono);
             color: var(--text-primary);
             line-height: 1;
@@ -810,22 +850,711 @@
 
         .score-circle-lbl {
             font-size: 0.6875rem;
+            font-weight: 600;
             color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             margin-top: 0.2rem;
         }
 
-        /* Server-rendered static result fallback */
-        .static-result-wrap {
-            margin-top: 2rem;
+        .keyword-alignment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+            margin-top: 0.75rem;
+        }
+
+        .keyword-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.6rem;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 4px;
+        }
+
+        .keyword-item.matched {
+            border-left: 3px solid #16a34a;
+        }
+
+        .keyword-item.missing {
+            border-left: 3px solid #dc2626;
+            opacity: 0.85;
+        }
+
+        /* Text Viewers */
+        .text-viewer-card {
+            background: #fafafa;
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .viewer-toolbar {
+            padding: 0.6rem 1rem;
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border-hairline);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .viewer-code-pre {
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Job Listings Tab & Structural Cards */
+        .jobs-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .jobs-toolbar {
+            background: #fafafa;
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .jobs-search-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .jobs-search-box {
+            position: relative;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .jobs-search-box svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .jobs-search-input {
+            width: 100%;
+            padding: 0.55rem 0.75rem 0.55rem 2.25rem;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 6px;
+            font-size: 0.8125rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .jobs-search-input:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        .jobs-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        .jobs-select {
+            padding: 0.55rem 0.75rem;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 6px;
+            font-size: 0.8125rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+
+        .jobs-select:focus {
+            outline: none;
+            border-color: var(--border-focus);
+        }
+
+        .jobs-remote-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+            padding: 0.5rem 0.75rem;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .jobs-remote-toggle:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .jobs-status-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            border: 1px solid var(--border-hairline);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .jobs-status-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .jobs-status-tag {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            background: #eff6ff;
+            color: var(--accent-primary);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.6875rem;
+        }
+
+        .jobs-cards-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .job-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-hairline);
+            border-radius: 10px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .job-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .job-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .job-card-title-group {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .job-company-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-hairline);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+            font-weight: 800;
+            color: var(--accent-primary);
+            flex-shrink: 0;
+            font-family: var(--font-sans);
+        }
+
+        .job-title-text {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .job-company-meta {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin-top: 0.15rem;
+            flex-wrap: wrap;
+        }
+
+        .job-match-badge-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .job-match-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            letter-spacing: -0.01em;
+        }
+
+        .job-match-pill.high {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #15803d;
+        }
+
+        .job-match-pill.medium {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #b45309;
+        }
+
+        .job-match-pill.low {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+        }
+
+        .job-match-pill.neutral {
+            background: #f1f5f9;
+            border: 1px solid var(--border-hairline);
+            color: var(--text-secondary);
+        }
+
+        .job-meter-bar {
+            width: 80px;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .job-meter-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        .job-tags-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .job-tag {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-hairline);
+            color: var(--text-secondary);
+        }
+
+        .job-tag.salary {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        .job-tag.remote {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .job-description-text {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        .job-skills-chips {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .job-skill-chip {
+            font-size: 0.6875rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .job-skill-chip.matched {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+            font-weight: 600;
+        }
+
+        .job-card-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-hairline);
+            flex-wrap: wrap;
+        }
+
+        .btn-job-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+
+        .btn-job-action.primary {
+            background: var(--text-primary);
+            color: #ffffff;
+            border: 1px solid transparent;
+        }
+
+        .btn-job-action.primary:hover {
+            background: #1e293b;
+        }
+
+        .btn-job-action.secondary {
+            background: #ffffff;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-hairline);
+        }
+
+        .btn-job-action.secondary:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+        }
+
+        .tab-counter-badge {
+            font-size: 0.6875rem;
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-hairline);
+            padding: 0.1rem 0.45rem;
+            border-radius: 9999px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-left: 0.25rem;
+        }
+        .tab-btn.active .tab-counter-badge {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: var(--accent-primary);
+        }
+
+        /* Pricing Section */
+        .pricing-section {
+            margin-top: 3.5rem;
+            padding-top: 2.5rem;
+            border-top: 1px solid var(--border-hairline);
+        }
+
+        .pricing-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .pricing-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 0.35rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .pricing-card {
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 12px;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--accent-primary);
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+        }
+
+        .pricing-tier-name {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .pricing-tier-price {
+            font-size: 1.875rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            margin: 0.5rem 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pricing-tier-price span {
+            font-size: 0.875rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            font-family: var(--font-sans);
+        }
+
+        .pricing-tier-desc {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        .pro-benefits-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .pro-benefit-item {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pro-benefit-item svg {
+            color: var(--status-success);
+            flex-shrink: 0;
+        }
+
+        .btn-checkout-primary {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--accent-primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-checkout-primary:hover {
+            background: var(--accent-primary-hover);
+        }
+
+        /* Dev Sandbox Toolbar */
+        .dev-sandbox-bar {
+            margin-top: 3rem;
+            padding: 1rem 1.25rem;
+            background: #f8fafc;
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.8125rem;
+        }
+
+        .dev-sandbox-btn {
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .dev-sandbox-btn:hover {
+            border-color: var(--text-primary);
+            color: var(--text-primary);
+        }
+
+        /* Modal Dialog */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 14px;
+            max-width: 520px;
+            width: 100%;
+            padding: 2.25rem;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .modal-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
+        }
+
+        .plan-choice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+        }
+
+        .plan-option-card {
+            border: 2px solid var(--border-hairline);
+            border-radius: 8px;
+            padding: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .plan-option-card.selected {
+            border-color: var(--accent-primary);
+            background: var(--accent-light);
+        }
+
+        .plan-option-title {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .plan-option-price {
+            font-size: 1.25rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+            margin: 0.2rem 0;
+        }
+
+        .btn-dev-simulate {
+            width: 100%;
+            margin-top: 0.75rem;
+            padding: 0.6rem;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .btn-dev-simulate:hover {
+            background: var(--surface-subtle);
         }
     </style>
 </head>
 <body>
     <!-- Top Bar Contract -->
     <header class="top-bar">
-        <!-- Zone 1: Brand Wordmark -->
         <a href="/" class="brand-wordmark">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -835,17 +1564,32 @@
             Resume Rater
         </a>
 
-        <!-- Zone 2: Navigation Links -->
         <nav class="nav-links">
             <a href="#upload-section" class="nav-link">PDF Parser</a>
-            <a href="#sections-tab" class="nav-link">Section Extraction</a>
-            <a href="#matcher-tab" class="nav-link">Job Matcher</a>
-            <a href="/api/sample-resumes" target="_blank" class="nav-link">Sample API</a>
+            <a href="#tab-recharts" class="nav-link nav-tab-link" data-tab-target="tab-recharts">Match Radar</a>
+            <a href="#tab-sections" class="nav-link nav-tab-link" data-tab-target="tab-sections">CV Sections</a>
+            <a href="#tab-matcher" class="nav-link nav-tab-link" data-tab-target="tab-matcher">Role Matcher</a>
+            <a href="#tab-jobs" class="nav-link nav-tab-link" data-tab-target="tab-jobs">Job Listings</a>
+            <a href="#pricing" class="nav-link">Pro Plan ($5/mo)</a>
         </nav>
 
-        <!-- Zone 3: Actions -->
-        <div>
-            <button type="button" class="top-action-btn" id="btnQuickSampleTop">Try Sample Resume</button>
+        <div class="quota-indicator">
+            <div id="quotaNavDisplay">
+                <% if (locals.billing && billing.isPro) { %>
+                    <span class="quota-badge-pro">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Pro Unlimited
+                    </span>
+                <% } else { %>
+                    <span class="quota-text">
+                        Free Plan · <span class="quota-badge-free" id="headerScansCount"><%= (locals.billing ? billing.scansUsed : 0) %>/3 scans</span>
+                    </span>
+                <% } %>
+            </div>
+
+            <button type="button" class="btn-upgrade-nav" id="btnNavUpgradeAction">
+                <%= (locals.billing && billing.isPro) ? 'Pro Active' : 'Upgrade ($5/mo)' %>
+            </button>
         </div>
     </header>
 
@@ -853,339 +1597,583 @@
     <main class="main-container">
         <!-- Hero Section -->
         <div class="hero-section">
-            <h1 class="hero-title">Resume Parser & Evaluator</h1>
-            <div class="hero-subtitle">
-                <span>PDF Text Extraction</span>
-                <span class="hero-separator">·</span>
-                <span>Section Parsing</span>
-                <span class="hero-separator">·</span>
-                <span>TF-IDF Vectorization</span>
-                <span class="hero-separator">·</span>
-                <span>Domain Classification</span>
+            <div>
+                <h1 class="hero-title">Career Intelligence & ATS Resume Rater</h1>
+                <div class="hero-subtitle">
+                    <span>TF-IDF Vector Space</span>
+                    <span>·</span>
+                    <span>Multi-Dimensional Competency Fit</span>
+                    <span>·</span>
+                    <span>Automated CV Section Parser</span>
+                </div>
+            </div>
+            <div class="hero-meta-strip">
+                <span class="hero-meta-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    20 Standard Industry Roles
+                </span>
+                <span style="color: var(--border-hairline);">·</span>
+                <span class="hero-meta-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    Real-Time Cosine Scoring
+                </span>
             </div>
         </div>
 
-        <!-- File Upload Card Component -->
+        <!-- Split-Pane Workspace -->
         <div class="workspace-grid">
+            <!-- Left Panel: Upload & Job Target Specification -->
             <section class="surface-card" id="upload-section">
                 <div class="card-header-row">
                     <div>
-                        <h2 class="card-title">Upload Resume Document</h2>
-                        <p class="card-caption">Select or drop a PDF file to extract text layers and analyze career sections</p>
+                        <h2 class="card-title">Resume & Job Specification</h2>
+                        <p class="card-caption">Upload candidate document or test with industry samples</p>
                     </div>
                     <span class="file-size" id="uploadStatusBadge">Ready</span>
                 </div>
 
-                <!-- Interactive Dropzone -->
-                <div class="dropzone-container" id="dropzone">
-                    <input type="file" id="resumeFileInput" name="resume" accept=".pdf,application/pdf" aria-label="Upload PDF resume file">
-                    <div class="dropzone-icon">
-                        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
-                            <path d="M12 12v9"></path>
-                            <path d="m16 16-4-4-4 4"></path>
-                        </svg>
-                    </div>
-                    <p class="dropzone-headline">Drag & drop your PDF resume here, or browse files</p>
-                    <p class="dropzone-helper">Standard PDF files (.pdf) up to 15MB supported</p>
-                    <span class="browse-cta">Browse PDF Document</span>
-                </div>
-
-                <!-- Selected File Metadata Card -->
-                <div class="selected-file-card" id="selectedFileCard">
-                    <div class="selected-file-info">
-                        <div class="file-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                <!-- Fallback Form for Standard HTML POST /upload -->
+                <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+                    <!-- Interactive Dropzone -->
+                    <div class="dropzone-container" id="dropzone">
+                        <input type="file" id="resumeFileInput" name="resume" accept=".pdf,application/pdf" aria-label="Upload PDF resume file">
+                        <div class="dropzone-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                                <path d="M12 12v9"></path>
+                                <path d="m16 16-4-4-4 4"></path>
                             </svg>
                         </div>
-                        <div class="file-meta-text">
-                            <p class="file-name" id="selectedFileName">filename.pdf</p>
-                            <p class="file-size" id="selectedFileSize">0 KB</p>
-                        </div>
+                        <p class="dropzone-headline">Drag & drop candidate PDF resume</p>
+                        <p class="dropzone-helper">Standard PDF files (.pdf) up to 15MB</p>
+                        <span class="browse-cta">Browse PDF Document</span>
                     </div>
-                    <div class="file-action-group">
+
+                    <!-- Selected File Metadata Card -->
+                    <div class="selected-file-card" id="selectedFileCard">
+                        <div class="selected-file-info">
+                            <div class="file-icon-box">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                            </div>
+                            <div class="file-meta-text">
+                                <p class="file-name" id="selectedFileName">filename.pdf</p>
+                                <p class="file-size" id="selectedFileSize">0 KB</p>
+                            </div>
+                        </div>
                         <button type="button" class="btn-remove" id="btnRemoveFile">Change</button>
                     </div>
-                </div>
 
-                <!-- Quick Samples Strip -->
-                <div class="samples-strip">
-                    <span class="samples-label">Quick test with sample:</span>
-                    <button type="button" class="sample-chip" data-sample="Saads_CV_Resume.pdf">Saad Ali (ML Engineer)</button>
-                    <button type="button" class="sample-chip" data-sample="resume1.pdf">Sample Resume 1</button>
-                    <button type="button" class="sample-chip" data-sample="resume2.pdf">Sample Resume 2</button>
-                    <button type="button" class="sample-chip" data-sample="Saad_Ali_ResumeCV_Old.pdf">Saad Ali (Old CV)</button>
-                </div>
-
-                <!-- Optional Target Job Description Accordion -->
-                <div class="optional-jd-section">
-                    <div class="section-toggle-header" id="jdToggleHeader">
-                        <span class="section-toggle-title">Optional: Evaluate Against Target Job Role or Description</span>
-                        <svg class="section-toggle-chevron" id="jdChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-
-                    <div class="jd-fields-wrap" id="jdFieldsWrap" style="display: none;">
-                        <div>
-                            <label class="input-label" for="jobKeywordsSelect">Select Standard Industry Role Keywords:</label>
-                            <select id="jobKeywordsSelect" class="input-select">
-                                <option value="">Choose preset role keywords...</option>
-                                <option value="Data Scientist, Machine Learning, Python, SQL, Statistics, Modeling">Data Scientist</option>
-                                <option value="Software Engineer, Java, C++, Algorithms, Data Structures, System Design">Software Engineer</option>
-                                <option value="Web Developer, HTML, CSS, JavaScript, React, Node.js">Web Developer</option>
-                                <option value="Python Developer, Django, Flask, MySQL, REST APIs, Automation">Python Developer</option>
-                                <option value="AI Engineer, Deep Learning, Neural Networks, TensorFlow, PyTorch">AI Engineer</option>
-                                <option value="Cloud Architect, AWS, Azure, Cloud Infrastructure, Docker, Kubernetes">Cloud Architect</option>
-                                <option value="DevOps Engineer, CI/CD, Docker, Kubernetes, AWS, Terraform">DevOps Engineer</option>
-                                <option value="Cybersecurity Analyst, Security, Penetration Testing, Risk Management">Cybersecurity Analyst</option>
-                                <option value="Mobile Developer, Android, iOS, Flutter, Swift, Kotlin">Mobile Developer</option>
-                                <option value="Project Manager, Agile, Scrum, Leadership, Roadmaps">Project Manager</option>
-                                <option value="Database Administrator, SQL, Oracle, Performance Tuning">Database Administrator</option>
-                                <option value="UI/UX Designer, Wireframing, Prototyping, User Research, Figma">UI/UX Designer</option>
-                            </select>
+                    <!-- Quick Sample Resumes Picker -->
+                    <div class="samples-strip">
+                        <div class="samples-header-row">
+                            <span class="samples-label">Quick Test Candidates:</span>
+                            <span class="card-caption">Click to auto-parse</span>
                         </div>
-
-                        <div>
-                            <label class="input-label" for="jobDescriptionTextarea">Or Paste Job Description Text:</label>
-                            <textarea id="jobDescriptionTextarea" class="input-textarea" rows="3" placeholder="Paste specific requirements, responsibilities, or skills..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Button & Upload State -->
-                <div class="action-row">
-                    <button type="button" class="btn-primary" id="btnParseResume" disabled>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <span id="btnParseText">Parse Resume Text</span>
-                    </button>
-                    <span class="file-size" id="parsingStatusMessage"></span>
-                </div>
-
-                <!-- Progress Bar -->
-                <div class="progress-container" id="progressContainer">
-                    <div class="progress-header">
-                        <span id="progressStepText">Extracting PDF text layers...</span>
-                        <span class="file-size" id="progressPercent">Processing</span>
-                    </div>
-                    <div class="progress-bar-track">
-                        <div class="progress-bar-fill" id="progressBarFill"></div>
-                    </div>
-                </div>
-
-                <!-- Alert Message -->
-                <div class="alert-box" id="alertBox"></div>
-            </section>
-
-            <!-- Results Dashboard Panel -->
-            <section class="results-panel" id="resultsPanel">
-                <!-- Summary Card -->
-                <div class="result-summary-card">
-                    <div class="summary-role-col">
-                        <span class="summary-kicker">Predicted Career Category</span>
-                        <h3 class="summary-role-title" id="resCategory">Unknown</h3>
-                        <span class="card-caption" id="resFilename">Saads_CV_Resume.pdf</span>
-                    </div>
-
-                    <div class="summary-metrics-row">
-                        <div class="metric-item">
-                            <span class="metric-val" id="resPages">1</span>
-                            <span class="metric-lbl">Pages</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="metric-val" id="resWords">0</span>
-                            <span class="metric-lbl">Words</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="metric-val" id="resChars">0</span>
-                            <span class="metric-lbl">Characters</span>
+                        <div class="sample-chips-grid">
+                            <button type="button" class="sample-chip active" data-sample="Saads_CV_Resume.pdf" data-role="Data Scientist, Machine Learning, Python, SQL, Statistics, Modeling">Saad Ali (ML/Data)</button>
+                            <button type="button" class="sample-chip" data-sample="resume1.pdf" data-role="Software Engineer, Java, C++, Algorithms, System Design">Sample Resume 1</button>
+                            <button type="button" class="sample-chip" data-sample="resume2.pdf" data-role="Web Developer, HTML, CSS, JavaScript, React, Node.js">Sample Resume 2</button>
+                            <button type="button" class="sample-chip" data-sample="Saad_Ali_ResumeCV_Old.pdf" data-role="Python Developer, Django, Flask, MySQL, REST APIs">Saad Ali (Old CV)</button>
                         </div>
                     </div>
 
-                    <div class="match-badge-container" id="matchBadgeContainer" style="display: none;">
-                        <div class="metric-item">
-                            <span class="metric-lbl">Match Rating</span>
-                            <span class="match-rating-text" id="resMatchRating">High Match</span>
-                        </div>
-                        <span class="match-score-num" id="resSimilarityScore">0.85</span>
-                    </div>
-                </div>
-
-                <!-- Segmented Tabs -->
-                <div class="segmented-tabs" role="tablist">
-                    <button type="button" class="tab-btn active" data-tab="tab-recharts">Match Visualization (Recharts)</button>
-                    <button type="button" class="tab-btn" data-tab="tab-sections">Extracted Sections</button>
-                    <button type="button" class="tab-btn" data-tab="tab-matcher">Job Match Evaluator</button>
-                    <button type="button" class="tab-btn" data-tab="tab-cleaned">Cleaned Text</button>
-                    <button type="button" class="tab-btn" data-tab="tab-raw">Raw PDF Text</button>
-                </div>
-
-                <!-- Tab 0: Recharts Visualization Component -->
-                <div class="tab-pane active" id="tab-recharts">
-                    <div id="recharts-match-container"></div>
-                </div>
-
-                <!-- Tab 1: Extracted Sections -->
-                <div class="tab-pane" id="tab-sections">
-                    <div class="sections-grid">
-                        <!-- Education -->
-                        <div class="section-box">
-                            <div class="section-box-header">
-                                <span class="section-box-name">Education</span>
-                                <button type="button" class="btn-copy-section" data-target="sec-education">Copy Section</button>
-                            </div>
-                            <div class="section-box-content" id="sec-education">No education section detected.</div>
+                    <!-- Target Job Description Accordion (20 Complete Roles) -->
+                    <div class="optional-jd-section">
+                        <div class="section-toggle-header" id="jdToggleHeader">
+                            <span class="section-toggle-title">Target Job Role & Requirements</span>
+                            <svg class="section-toggle-chevron" id="jdChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
                         </div>
 
-                        <!-- Work Experience -->
-                        <div class="section-box">
-                            <div class="section-box-header">
-                                <span class="section-box-name">Work Experience</span>
-                                <button type="button" class="btn-copy-section" data-target="sec-experience">Copy Section</button>
-                            </div>
-                            <div class="section-box-content" id="sec-experience">No experience section detected.</div>
-                        </div>
-
-                        <!-- Skills -->
-                        <div class="section-box">
-                            <div class="section-box-header">
-                                <span class="section-box-name">Technical Skills</span>
-                                <button type="button" class="btn-copy-section" data-target="sec-skills">Copy Section</button>
-                            </div>
-                            <div class="section-box-content" id="sec-skills">No skills section detected.</div>
-                        </div>
-
-                        <!-- Projects -->
-                        <div class="section-box">
-                            <div class="section-box-header">
-                                <span class="section-box-name">Projects & Systems</span>
-                                <button type="button" class="btn-copy-section" data-target="sec-projects">Copy Section</button>
-                            </div>
-                            <div class="section-box-content" id="sec-projects">No projects section detected.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab 2: Cleaned Text -->
-                <div class="tab-pane" id="tab-cleaned">
-                    <div class="text-viewer-card">
-                        <div class="viewer-toolbar">
-                            <span class="card-caption">Preprocessed tokenized text used for TF-IDF vectorization & classification</span>
-                            <button type="button" class="btn-copy-section" id="btnCopyCleaned">Copy Cleaned Text</button>
-                        </div>
-                        <pre class="viewer-code-pre" id="cleanedTextPre"></pre>
-                    </div>
-                </div>
-
-                <!-- Tab 3: Raw PDF Text -->
-                <div class="tab-pane" id="tab-raw">
-                    <div class="text-viewer-card">
-                        <div class="viewer-toolbar">
-                            <span class="card-caption">Exact raw text extracted from PDF stream layers</span>
-                            <button type="button" class="btn-copy-section" id="btnCopyRaw">Copy Raw Text</button>
-                        </div>
-                        <pre class="viewer-code-pre" id="rawTextPre"></pre>
-                    </div>
-                </div>
-
-                <!-- Tab 4: Interactive Match Evaluator -->
-                <div class="tab-pane" id="tab-matcher">
-                    <div class="matcher-box">
-                        <h4 class="card-title">Real-Time Job Similarity Evaluation</h4>
-                        <p class="card-caption">Test this parsed resume against custom job descriptions or preset specifications to compute live TF-IDF cosine similarity.</p>
-                        
-                        <div class="matcher-grid">
+                        <div class="jd-fields-wrap" id="jdFieldsWrap">
                             <div>
-                                <label class="input-label" for="liveJdPreset">Quick Role Keyword Presets:</label>
-                                <select id="liveJdPreset" class="input-select" style="margin-bottom: 0.75rem;">
-                                    <option value="">Select industry role...</option>
-                                    <option value="Data Scientist, Machine Learning, Python, SQL, Statistics, Modeling, Deep Learning">Data Scientist</option>
-                                    <option value="Machine Learning Engineer, PyTorch, TensorFlow, Computer Vision, SNN, Model Deployment">Machine Learning Engineer</option>
-                                    <option value="Python Developer, Django, Flask, MySQL, REST API, Microservices">Python Developer</option>
-                                    <option value="Frontend Developer, React, JavaScript, HTML, CSS, TypeScript, UI/UX">Frontend Developer</option>
-                                    <option value="Backend Developer, Node.js, Express, MongoDB, PostgreSQL, Microservices">Backend Developer</option>
-                                    <option value="Full Stack Developer, React, Node.js, Python, MongoDB, SQL, Git">Full Stack Developer</option>
-                                    <option value="Cloud Engineer, AWS, Azure, Docker, Kubernetes, CI/CD, Terraform">Cloud Engineer</option>
-                                    <option value="Cybersecurity Analyst, Security, Penetration Testing, Risk Management, Malware">Cybersecurity Analyst</option>
+                                <label class="input-label" for="jobKeywordsSelect">Select from 20 Industry Role Presets:</label>
+                                <select id="jobKeywordsSelect" name="job_keywords" class="input-select">
+                                    <option value="">Select industry role benchmark...</option>
+                                    <option value="Data Scientist, Machine Learning, Python, SQL, Statistics, Deep Learning, Predictive Modeling" selected>Data Scientist</option>
+                                    <option value="Software Engineer, Java, C++, Algorithms, Data Structures, System Design, Microservices">Software Engineer</option>
+                                    <option value="Project Manager, Agile, Scrum, Leadership, Roadmaps, Sprint Planning, Stakeholder Management">Project Manager</option>
+                                    <option value="Web Developer, HTML, CSS, JavaScript, React, Node.js, Frontend, Responsive Design">Web Developer</option>
+                                    <option value="Database Administrator, SQL, Oracle, Performance Tuning, Backup, PostgreSQL, Indexing">Database Administrator</option>
+                                    <option value="System Administrator, Linux, Windows Server, Networking, Bash, Troubleshooting, Active Directory">System Administrator</option>
+                                    <option value="DevOps Engineer, CI/CD, Docker, Kubernetes, AWS, Terraform, Cloud, Jenkins">DevOps Engineer</option>
+                                    <option value="Cybersecurity Analyst, Security, Penetration Testing, Risk Management, Firewall, SIEM, Compliance">Cybersecurity Analyst</option>
+                                    <option value="AI Engineer, Deep Learning, Neural Networks, TensorFlow, PyTorch, Computer Vision, NLP">AI Engineer</option>
+                                    <option value="Business Analyst, Requirements Gathering, Process Improvement, Data Analysis, PowerBI, Tableau">Business Analyst</option>
+                                    <option value="IT Support Specialist, Troubleshooting, Help Desk, Technical Support, Hardware, Network">IT Support Specialist</option>
+                                    <option value="Network Engineer, Cisco, Routing, Switching, Firewalls, TCP/IP, VPN, LAN/WAN">Network Engineer</option>
+                                    <option value="Cloud Architect, AWS, Azure, Cloud Infrastructure, Cloud Security, Solutions Architecture">Cloud Architect</option>
+                                    <option value="UI/UX Designer, Wireframing, Prototyping, User Research, Design Thinking, Figma, Usability">UI/UX Designer</option>
+                                    <option value="Mobile Developer, Android, iOS, Flutter, Swift, Kotlin, React Native, Mobile Apps">Mobile Developer</option>
+                                    <option value="Quality Assurance Tester, Manual Testing, Automated Testing, QA Processes, Selenium, Test Plans">Quality Assurance Tester</option>
+                                    <option value="IT Consultant, IT Strategy, Technology Solutions, Business Continuity, Advisory">IT Consultant</option>
+                                    <option value="Software Architect, System Design, Microservices, API Design, Scalability, Distributed Systems">Software Architect</option>
+                                    <option value="Blockchain Developer, Smart Contracts, Ethereum, Hyperledger, Solidity, Web3">Blockchain Developer</option>
+                                    <option value="Game Developer, Unity, Unreal Engine, Game Physics, 3D Modeling, C#, C++">Game Developer</option>
                                 </select>
-
-                                <label class="input-label" for="liveJdInput">Job Description Text:</label>
-                                <textarea id="liveJdInput" class="input-textarea" rows="6" placeholder="Paste target job responsibilities, skills, or job posting content here..."></textarea>
-                                
-                                <div style="margin-top: 0.75rem;">
-                                    <button type="button" class="btn-primary" id="btnComputeLiveMatch">Evaluate Match</button>
-                                </div>
                             </div>
 
-                            <div class="matcher-output-card">
-                                <div class="score-circle">
-                                    <span class="score-circle-num" id="liveScoreNum">0.00</span>
-                                    <span class="score-circle-lbl">SIMILARITY</span>
+                            <div>
+                                <label class="input-label" for="jobDescriptionTextarea">Target Job Description Text / Responsibilities:</label>
+                                <textarea id="jobDescriptionTextarea" name="job_description_text" class="input-textarea" rows="3" placeholder="Enter target responsibilities, qualifications, and core competencies..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="action-row">
+                        <button type="button" class="btn-primary" id="btnParseResume">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span id="btnParseText">Evaluate & Parse Resume</span>
+                        </button>
+                    </div>
+
+                    <!-- Progress Indicator -->
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-header">
+                            <span id="progressStepText">Extracting text layers & parsing vectors...</span>
+                            <span class="file-size" id="progressPercent">Processing</span>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="alert-box" id="alertBox"></div>
+                </form>
+            </section>
+
+            <!-- Right Panel: Live Career Intelligence Dashboard -->
+            <div class="dashboard-viewport">
+                <!-- Top Metric Scorecards -->
+                <div class="metrics-banner-grid">
+                    <div class="metric-card">
+                        <div class="metric-card-header">
+                            <span>Predicted Category</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        </div>
+                        <div class="metric-card-value" id="resCategory">Data Scientist</div>
+                        <div class="metric-card-caption" id="resFilename">Saads_CV_Resume.pdf</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-card-header">
+                            <span>Match Rating</span>
+                            <span class="status-badge high" id="resMatchBadge">High Match</span>
+                        </div>
+                        <div class="metric-card-value" id="resSimilarityScore">0.85</div>
+                        <div class="metric-card-caption" id="resTargetRoleKicker">vs. Data Scientist Benchmark</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-card-header">
+                            <span>Doc Scope</span>
+                            <span class="file-size" id="resPages">1 page</span>
+                        </div>
+                        <div class="metric-card-value" id="resWords">482</div>
+                        <div class="metric-card-caption"><span id="resChars">3,490</span> raw characters</div>
+                    </div>
+                </div>
+
+                <!-- Main Analysis Tabs Card -->
+                <div class="workspace-tabs-card" id="resultsPanel">
+                    <div class="tabs-header-bar" role="tablist">
+                        <button type="button" class="tab-btn active" data-tab="tab-recharts">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="m4.93 4.93 4.24 4.24"></path><path d="m14.83 9.17 4.24-4.24"></path></svg>
+                            Recharts Competency Radar
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-sections">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            Extracted CV Sections
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-matcher">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            Role Match Evaluator
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-jobs">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                            Job Listings
+                            <span class="tab-counter-badge" id="jobsTabCounter">12</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-cleaned">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                            Cleaned Tokens
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-raw">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            Raw PDF Layers
+                        </button>
+                    </div>
+
+                    <div class="tab-content-area">
+                        <!-- Tab 0: Recharts Radar -->
+                        <div class="tab-pane active" id="tab-recharts">
+                            <div id="recharts-match-container"></div>
+                        </div>
+
+                        <!-- Tab 1: Extracted Sections -->
+                        <div class="tab-pane" id="tab-sections">
+                            <div class="sections-grid">
+                                <div class="section-box">
+                                    <div class="section-box-header">
+                                        <span class="section-box-name">Education</span>
+                                        <button type="button" class="btn-copy-section" data-target="sec-education">Copy</button>
+                                    </div>
+                                    <div class="section-box-content" id="sec-education">Bachelor of Science in Software Engineering, FAST-NUCES (2021 - 2025). Relevant coursework: Machine Learning, Data Structures, Operating Systems, Computer Vision.</div>
                                 </div>
-                                <h4 class="match-rating-text" id="liveRatingText">Awaiting evaluation</h4>
-                                <p class="card-caption" id="liveMatchDesc" style="margin-top: 0.5rem;">Select a preset or enter job requirements to compute cosine similarity against this resume's TF-IDF vector.</p>
+
+                                <div class="section-box">
+                                    <div class="section-box-header">
+                                        <span class="section-box-name">Work Experience</span>
+                                        <button type="button" class="btn-copy-section" data-target="sec-experience">Copy</button>
+                                    </div>
+                                    <div class="section-box-content" id="sec-experience">Machine Learning Intern & Software Engineering Researcher. Developed computer vision algorithms with OpenCV and Flask, built feature extraction pipelines, optimized neural models for latency.</div>
+                                </div>
+
+                                <div class="section-box">
+                                    <div class="section-box-header">
+                                        <span class="section-box-name">Technical Skills</span>
+                                        <button type="button" class="btn-copy-section" data-target="sec-skills">Copy</button>
+                                    </div>
+                                    <div class="section-box-content" id="sec-skills">Python, SQL, PyTorch, TensorFlow, Scikit-Learn, OpenCV, Flask, Django, Spiking Neural Networks (SNN), TF-IDF, Git, Docker, REST APIs, Statistics.</div>
+                                </div>
+
+                                <div class="section-box">
+                                    <div class="section-box-header">
+                                        <span class="section-box-name">Projects & Systems</span>
+                                        <button type="button" class="btn-copy-section" data-target="sec-projects">Copy</button>
+                                    </div>
+                                    <div class="section-box-content" id="sec-projects">1. SNN Gesture Recognition Engine: Neuromorphic vision processor with 94.2% accuracy.
+2. Resume Match Evaluator: TF-IDF vectorization with cosine similarity scoring.
+3. Boiler Management Monitoring System: IoT automation dashboard in Python.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Live Role Match Evaluator -->
+                        <div class="tab-pane" id="tab-matcher">
+                            <div class="matcher-grid">
+                                <div class="matcher-left">
+                                    <div>
+                                        <label class="input-label" for="liveJdPreset">Select Role Benchmark Preset:</label>
+                                        <select id="liveJdPreset" class="input-select">
+                                            <option value="">Select industry role benchmark...</option>
+                                            <option value="Data Scientist, Machine Learning, Python, SQL, Statistics, Modeling, Deep Learning, Pandas, Scikit-learn" selected>Data Scientist</option>
+                                            <option value="Software Engineer, Java, C++, Algorithms, Data Structures, System Design, Distributed Systems, Microservices">Software Engineer</option>
+                                            <option value="AI Engineer, Deep Learning, Neural Networks, TensorFlow, PyTorch, Computer Vision, SNN, Model Deployment">AI Engineer</option>
+                                            <option value="Python Developer, Django, Flask, MySQL, REST APIs, Microservices, Celery, Docker">Python Developer</option>
+                                            <option value="DevOps Engineer, CI/CD, Docker, Kubernetes, AWS, Terraform, Cloud, Monitoring">DevOps Engineer</option>
+                                            <option value="Cybersecurity Analyst, Security, Penetration Testing, Risk Management, Malware, SIEM">Cybersecurity Analyst</option>
+                                            <option value="Web Developer, HTML, CSS, JavaScript, React, Node.js, Frontend, Responsive">Web Developer</option>
+                                            <option value="Cloud Architect, AWS, Azure, Cloud Infrastructure, Cloud Security, Architecture">Cloud Architect</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="input-label" for="liveJdInput">Job Description / Requirements Text:</label>
+                                        <textarea id="liveJdInput" class="input-textarea" rows="5" placeholder="Paste target requirements or job posting text..."></textarea>
+                                    </div>
+
+                                    <button type="button" class="btn-primary" id="btnComputeLiveMatch" style="width: auto; align-self: flex-start;">
+                                        Evaluate Match Score
+                                    </button>
+                                </div>
+
+                                <div class="matcher-score-card">
+                                    <div class="score-circle">
+                                        <span class="score-circle-num" id="liveScoreNum">0.85</span>
+                                        <span class="score-circle-lbl">SIMILARITY</span>
+                                    </div>
+                                    <h4 class="card-title" id="liveRatingText" style="color: #16a34a;">High Match</h4>
+                                    <p class="card-caption" id="liveMatchDesc" style="margin-top: 0.35rem;">85% vector alignment against Data Scientist requirements.</p>
+
+                                    <div style="width: 100%; margin-top: 1rem; text-align: left;">
+                                        <span class="input-label">Key Term Frequency Alignment:</span>
+                                        <div class="keyword-alignment-list" id="keywordAlignmentList">
+                                            <div class="keyword-item matched"><span>Python</span><span style="font-family: monospace; font-weight: bold; color: #16a34a;">Matched</span></div>
+                                            <div class="keyword-item matched"><span>Machine Learning</span><span style="font-family: monospace; font-weight: bold; color: #16a34a;">Matched</span></div>
+                                            <div class="keyword-item matched"><span>SQL</span><span style="font-family: monospace; font-weight: bold; color: #16a34a;">Matched</span></div>
+                                            <div class="keyword-item matched"><span>OpenCV / Vision</span><span style="font-family: monospace; font-weight: bold; color: #16a34a;">Matched</span></div>
+                                            <div class="keyword-item missing"><span>Deep Learning Deployment</span><span style="font-family: monospace; color: #dc2626;">Missing</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Job Listings (JobDataLake API & Career Intelligence) -->
+                        <div class="tab-pane" id="tab-jobs">
+                            <div class="jobs-container">
+                                <div class="jobs-toolbar">
+                                    <div class="jobs-search-row">
+                                        <div class="jobs-search-box">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="11" cy="11" r="8"></circle>
+                                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                            </svg>
+                                            <input type="text" id="jobsSearchInput" class="jobs-search-input" placeholder="Search by role, skill, company (e.g. PyTorch, Scale AI, Stripe)..." aria-label="Search jobs">
+                                        </div>
+
+                                        <div class="jobs-filter-group">
+                                            <select id="jobsCategoryFilter" class="jobs-select" aria-label="Filter by Category">
+                                                <option value="">All Job Categories</option>
+                                                <option value="Data Science & AI">Data Science & AI</option>
+                                                <option value="Software Engineering">Software Engineering</option>
+                                                <option value="DevOps & Cloud">DevOps & Cloud</option>
+                                                <option value="Cybersecurity">Cybersecurity</option>
+                                                <option value="Database & Systems">Database & Systems</option>
+                                                <option value="Product & Management">Product & Management</option>
+                                            </select>
+
+                                            <select id="jobsSortFilter" class="jobs-select" aria-label="Sort Jobs">
+                                                <option value="match">Rank by ATS Match Fit</option>
+                                                <option value="salary">Sort by Salary (High-Low)</option>
+                                                <option value="recent">Sort by Most Recent</option>
+                                            </select>
+
+                                            <label class="jobs-remote-toggle" for="jobsRemoteToggle">
+                                                <input type="checkbox" id="jobsRemoteToggle">
+                                                <span>Remote Only</span>
+                                            </label>
+
+                                            <button type="button" class="btn-job-action secondary" id="btnRefreshJobs" title="Refresh Live Jobs">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                                Refresh
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="jobs-status-banner" id="jobsStatusBanner">
+                                        <div class="jobs-status-info">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                                            <span id="jobsStatusText">Fetching live job opportunities from JobDataLake API...</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                            <span class="jobs-status-tag" id="jobsCountBadge">12 Positions</span>
+                                            <span class="jobs-status-tag" style="background: #f1f5f9; color: var(--text-secondary);" id="jobsSourceBadge">JobDataLake API Live</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Dynamic Job Cards List -->
+                                <div class="jobs-cards-list" id="jobsCardsContainer">
+                                    <div style="text-align: center; padding: 2.5rem; color: var(--text-muted); font-size: 0.8125rem;">
+                                        Loading live job opportunities from JobDataLake API...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Cleaned Tokens -->
+                        <div class="tab-pane" id="tab-cleaned">
+                            <div class="text-viewer-card">
+                                <div class="viewer-toolbar">
+                                    <span class="card-caption">Preprocessed token stream used for TF-IDF vectorization</span>
+                                    <button type="button" class="btn-copy-section" id="btnCopyCleaned">Copy Cleaned Text</button>
+                                </div>
+                                <pre class="viewer-code-pre" id="cleanedTextPre">saad ather ali summary third year software engineering student passionate cybersecurity malware analysis seeking software engineering machine learning internship education bachelor science software engineering fast nuces karachi courses machine learning artificial intelligence operating systems technical skills python sql opencv flask django pytorch tensorflow spiking neural networks rest apis projects snn gesture recognition engine neuromorphic vision processor accuracy resume match evaluator tf idf vectorization cosine similarity boiler management system iot automation dashboard</pre>
+                            </div>
+                        </div>
+
+                        <!-- Tab 4: Raw PDF Layers -->
+                        <div class="tab-pane" id="tab-raw">
+                            <div class="text-viewer-card">
+                                <div class="viewer-toolbar">
+                                    <span class="card-caption">Exact raw text extracted from PDF stream layers</span>
+                                    <button type="button" class="btn-copy-section" id="btnCopyRaw">Copy Raw Text</button>
+                                </div>
+                                <pre class="viewer-code-pre" id="rawTextPre">SAAD ATHER ALI
+Software Engineering & Machine Learning Candidate
+Email: candidate@example.com | Karachi, Pakistan
+
+EDUCATION
+Bachelor of Science in Software Engineering, FAST-NUCES (2021 - 2025)
+Relevant Coursework: Machine Learning, Artificial Intelligence, Operating Systems, Computer Vision, Algorithms.
+
+EXPERIENCE
+Machine Learning Intern & Researcher (2024 - Present)
+- Designed and evaluated Spiking Neural Network (SNN) neuromorphic algorithms for low-power gesture classification.
+- Implemented computer vision pipelines using OpenCV and deployed REST evaluation services using Python and Flask.
+
+TECHNICAL SKILLS
+Languages: Python, SQL, C++, Java, Bash
+Frameworks: PyTorch, TensorFlow, Scikit-learn, OpenCV, Flask, Django, Docker, Git
+
+PROJECTS
+1. SNN Gesture Recognition Engine: Neuromorphic vision processor with 94.2% accuracy.
+2. Resume Match Evaluator: TF-IDF vectorization with cosine similarity scoring.
+3. Boiler Management Monitoring System: IoT automation dashboard in Python.</pre>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
 
-        <!-- Server-side fallback rendering for legacy POST /upload -->
-        <% if (locals.error) { %>
-            <div class="static-result-wrap">
-                <div class="alert-box error" style="display: block;">
-                    <%= error %>
-                </div>
+        <!-- Pricing Section -->
+        <section class="pricing-section" id="pricing">
+            <div class="pricing-header">
+                <h2 class="pricing-title">Simple, Transparent Pricing for Job Seekers</h2>
+                <p class="card-caption">Upgrade to Pro for $5/month to unlock unrestricted ATS scans, multi-engine simulations, and Recharts gap analytics.</p>
             </div>
-        <% } %>
 
-        <% if (locals.prediction_category && locals.resume_match_rating && locals.numerical_similarity_score !== undefined && locals.numerical_similarity_score !== null) { %>
-            <div class="static-result-wrap">
-                <div class="result-summary-card">
-                    <div class="summary-role-col">
-                        <span class="summary-kicker">Server-Processed Evaluation</span>
-                        <h3 class="summary-role-title"><%= prediction_category %></h3>
+            <div class="pricing-grid">
+                <!-- Free Plan -->
+                <div class="pricing-card">
+                    <div>
+                        <h3 class="pricing-tier-name">Free Starter</h3>
+                        <div class="pricing-tier-price">$0 <span>/ month</span></div>
+                        <p class="pricing-tier-desc">Essential tools for occasional resume reviews and basic evaluation.</p>
+                        
+                        <ul class="pro-benefits-list">
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                3 complimentary ATS scans / month
+                            </li>
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Basic TF-IDF similarity score
+                            </li>
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Standard CV section parser
+                            </li>
+                        </ul>
                     </div>
-                    <div class="match-badge-container">
-                        <div class="metric-item">
-                            <span class="metric-lbl">Match Rating</span>
-                            <span class="match-rating-text"><%= resume_match_rating %></span>
+                    <button type="button" class="dev-sandbox-btn" style="width: 100%; padding: 0.65rem;" disabled>Current Baseline</button>
+                </div>
+
+                <!-- Pro Monthly ($5/mo) -->
+                <div class="pricing-card featured">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 class="pricing-tier-name" style="color: var(--accent-primary);">Pro Monthly</h3>
+                            <span style="background: #eff6ff; color: #2563eb; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700; font-size: 0.75rem;">MOST POPULAR</span>
                         </div>
-                        <span class="match-score-num"><%= numerical_similarity_score %></span>
+                        <div class="pricing-tier-price">$5 <span>/ month</span></div>
+                        <p class="pricing-tier-desc">Uncapped scans, multi-ATS engines, and deep Recharts competency diagnostics.</p>
+
+                        <ul class="pro-benefits-list">
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <strong>Unlimited</strong> PDF & DOCX ATS scans
+                            </li>
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Multi-dimensional Recharts competency radar
+                            </li>
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Real-time keyword frequency gap analyzer
+                            </li>
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Export parsed sections & match dossiers
+                            </li>
+                        </ul>
                     </div>
+                    <button type="button" class="btn-checkout-primary" data-plan="monthly">
+                        Upgrade for $5 / Month
+                    </button>
                 </div>
 
-                <% if (locals.csv_data && locals.csv_data.length) { %>
-                    <div class="sections-grid">
-                        <% csv_data.forEach(function(section) { %>
-                            <div class="section-box">
-                                <div class="section-box-header">
-                                    <span class="section-box-name"><%= section.Section %></span>
-                                </div>
-                                <div class="section-box-content"><%= section.Content %></div>
-                            </div>
-                        <% }); %>
+                <!-- Pro Annual ($39/yr) -->
+                <div class="pricing-card">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 class="pricing-tier-name">Pro Annual</h3>
+                            <span style="background: #f0fdf4; color: #16a34a; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700; font-size: 0.75rem;">SAVE 35%</span>
+                        </div>
+                        <div class="pricing-tier-price">$39 <span>/ year (~$3.25/mo)</span></div>
+                        <p class="pricing-tier-desc">Full year of unlimited optimization for active job searches and career growth.</p>
+
+                        <ul class="pro-benefits-list">
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                All Pro Monthly features included
+                            </li>
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Priority vectorization throughput
+                            </li>
+                            <li class="pro-benefit-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Unlimited version history exports
+                            </li>
+                        </ul>
                     </div>
-                <% } %>
+                    <button type="button" class="btn-checkout-primary" style="background: #0f172a;" data-plan="annual">
+                        Upgrade for $39 / Year
+                    </button>
+                </div>
             </div>
-        <% } %>
+        </section>
+
+        <!-- Sandbox / Developer Controls -->
+        <div class="dev-sandbox-bar">
+            <div>
+                <strong>Sandbox & Testing Controls:</strong>
+                <span class="card-caption" style="margin-left: 0.5rem;">Simulate Stripe and quota limit flows without a live credit card</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" class="dev-sandbox-btn" id="btnDevTogglePro">Toggle Pro Status ($5/mo)</button>
+                <button type="button" class="dev-sandbox-btn" id="btnDevSimulateLimit">Simulate Limit Reached (3/3)</button>
+                <button type="button" class="dev-sandbox-btn" id="btnDevResetQuota">Reset Scans to 0/3</button>
+            </div>
+        </div>
     </main>
+
+    <!-- Paywall Modal Dialog -->
+    <div class="modal-backdrop" id="upgradeModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-card">
+            <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <h3 class="modal-title" id="modalTitle">Monthly Free Scan Limit Reached</h3>
+            <p class="modal-desc" id="modalDesc">
+                You've used all 3 complimentary ATS scans for this month. Upgrade to Pro for just <strong>$5/month</strong> for unlimited scans, multi-engine simulations, and Recharts gap analytics.
+            </p>
+
+            <div class="plan-choice-grid">
+                <div class="plan-option-card selected" id="planChoiceMonthly">
+                    <div class="plan-option-title">Pro Monthly</div>
+                    <div class="plan-option-price">$5 <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">/ mo</span></div>
+                    <div class="card-caption">Cancel anytime</div>
+                </div>
+                <div class="plan-option-card" id="planChoiceAnnual">
+                    <div class="plan-option-title">Pro Annual</div>
+                    <div class="plan-option-price">$39 <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">/ yr</span></div>
+                    <div class="card-caption">Save 35% (~$3.25/mo)</div>
+                </div>
+            </div>
+
+            <button type="button" class="btn-checkout-primary" id="btnModalCheckoutAction">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                <span id="btnModalCheckoutText">Upgrade with Stripe ($5/mo)</span>
+            </button>
+
+            <button type="button" class="btn-dev-simulate" id="btnModalSimulateUpgrade">
+                Simulate Pro Activation (1-Click Dev Sandbox)
+            </button>
+        </div>
+    </div>
 
     <!-- Recharts Match Visualizer Bundle -->
     <script src="/match-visualizer.bundle.js"></script>
 
-    <!-- Client-side File Upload Component & Integration Script -->
+    <!-- Client-side Application Controller -->
     <script>
         (function() {
-            // Elements
+            // DOM Elements
             const dropzone = document.getElementById('dropzone');
             const fileInput = document.getElementById('resumeFileInput');
             const selectedFileCard = document.getElementById('selectedFileCard');
@@ -1198,26 +2186,23 @@
             const progressContainer = document.getElementById('progressContainer');
             const progressStepText = document.getElementById('progressStepText');
             const alertBox = document.getElementById('alertBox');
-            const resultsPanel = document.getElementById('resultsPanel');
-            const btnQuickSampleTop = document.getElementById('btnQuickSampleTop');
-
-            // Accordion JD toggle
             const jdToggleHeader = document.getElementById('jdToggleHeader');
             const jdFieldsWrap = document.getElementById('jdFieldsWrap');
             const jdChevron = document.getElementById('jdChevron');
             const jobKeywordsSelect = document.getElementById('jobKeywordsSelect');
             const jobDescriptionTextarea = document.getElementById('jobDescriptionTextarea');
 
-            // Result elements
+            // Result Metrics Elements
             const resCategory = document.getElementById('resCategory');
             const resFilename = document.getElementById('resFilename');
+            const resSimilarityScore = document.getElementById('resSimilarityScore');
+            const resMatchBadge = document.getElementById('resMatchBadge');
+            const resTargetRoleKicker = document.getElementById('resTargetRoleKicker');
             const resPages = document.getElementById('resPages');
             const resWords = document.getElementById('resWords');
             const resChars = document.getElementById('resChars');
-            const matchBadgeContainer = document.getElementById('matchBadgeContainer');
-            const resMatchRating = document.getElementById('resMatchRating');
-            const resSimilarityScore = document.getElementById('resSimilarityScore');
 
+            // Section Boxes
             const secEducation = document.getElementById('sec-education');
             const secExperience = document.getElementById('sec-experience');
             const secSkills = document.getElementById('sec-skills');
@@ -1225,18 +2210,47 @@
             const cleanedTextPre = document.getElementById('cleanedTextPre');
             const rawTextPre = document.getElementById('rawTextPre');
 
-            // Live matcher elements
+            // Live Matcher Elements
             const liveJdPreset = document.getElementById('liveJdPreset');
             const liveJdInput = document.getElementById('liveJdInput');
             const btnComputeLiveMatch = document.getElementById('btnComputeLiveMatch');
             const liveScoreNum = document.getElementById('liveScoreNum');
             const liveRatingText = document.getElementById('liveRatingText');
             const liveMatchDesc = document.getElementById('liveMatchDesc');
+            const keywordAlignmentList = document.getElementById('keywordAlignmentList');
+
+            // Modal & Billing Elements
+            const upgradeModal = document.getElementById('upgradeModal');
+            const modalCloseBtn = document.getElementById('modalCloseBtn');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalDesc = document.getElementById('modalDesc');
+            const planChoiceMonthly = document.getElementById('planChoiceMonthly');
+            const planChoiceAnnual = document.getElementById('planChoiceAnnual');
+            const btnModalCheckoutAction = document.getElementById('btnModalCheckoutAction');
+            const btnModalCheckoutText = document.getElementById('btnModalCheckoutText');
+            const btnModalSimulateUpgrade = document.getElementById('btnModalSimulateUpgrade');
+            const btnNavUpgradeAction = document.getElementById('btnNavUpgradeAction');
+            const quotaNavDisplay = document.getElementById('quotaNavDisplay');
+            const btnDevTogglePro = document.getElementById('btnDevTogglePro');
+            const btnDevSimulateLimit = document.getElementById('btnDevSimulateLimit');
+            const btnDevResetQuota = document.getElementById('btnDevResetQuota');
+
+            // Job Listings Elements
+            const jobsSearchInput = document.getElementById('jobsSearchInput');
+            const jobsCategoryFilter = document.getElementById('jobsCategoryFilter');
+            const jobsSortFilter = document.getElementById('jobsSortFilter');
+            const jobsRemoteToggle = document.getElementById('jobsRemoteToggle');
+            const btnRefreshJobs = document.getElementById('btnRefreshJobs');
+            const jobsCardsContainer = document.getElementById('jobsCardsContainer');
+            const jobsStatusBanner = document.getElementById('jobsStatusBanner');
+            const jobsStatusText = document.getElementById('jobsStatusText');
+            const jobsCountBadge = document.getElementById('jobsCountBadge');
+            const jobsTabCounter = document.getElementById('jobsTabCounter');
 
             let currentFile = null;
             let currentParsedData = null;
+            let selectedPlan = 'monthly';
 
-            // Format helper
             function formatBytes(bytes) {
                 if (!bytes || bytes === 0) return '0 KB';
                 const k = 1024;
@@ -1246,24 +2260,28 @@
             }
 
             function showAlert(msg, isError = true) {
+                if (!alertBox) return;
                 alertBox.textContent = msg;
                 alertBox.className = 'alert-box ' + (isError ? 'error' : 'success');
                 alertBox.style.display = 'block';
             }
 
             function clearAlert() {
+                if (!alertBox) return;
                 alertBox.textContent = '';
                 alertBox.style.display = 'none';
             }
 
-            // Accordion toggle
-            jdToggleHeader.addEventListener('click', () => {
-                const isOpen = jdFieldsWrap.style.display !== 'none';
-                jdFieldsWrap.style.display = isOpen ? 'none' : 'grid';
-                jdChevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-            });
+            // Accordion Toggle
+            if (jdToggleHeader && jdFieldsWrap) {
+                jdToggleHeader.addEventListener('click', () => {
+                    const isClosed = jdFieldsWrap.style.display === 'none';
+                    jdFieldsWrap.style.display = isClosed ? 'flex' : 'none';
+                    if (jdChevron) jdChevron.style.transform = isClosed ? 'rotate(180deg)' : 'rotate(0deg)';
+                });
+            }
 
-            // Handle file selection
+            // Handle File Selection
             function handleFile(file) {
                 clearAlert();
                 if (!file) return;
@@ -1274,7 +2292,6 @@
                     return;
                 }
 
-                // 15MB size limit
                 if (file.size > 15 * 1024 * 1024) {
                     showAlert('File size exceeds the 15MB limit. Please upload a smaller document.');
                     resetFileInput();
@@ -1282,56 +2299,58 @@
                 }
 
                 currentFile = file;
-                selectedFileName.textContent = file.name;
-                selectedFileSize.textContent = formatBytes(file.size);
-                selectedFileCard.style.display = 'flex';
-                dropzone.style.display = 'none';
-                btnParseResume.disabled = false;
-                uploadStatusBadge.textContent = 'File Ready';
+                if (selectedFileName) selectedFileName.textContent = file.name;
+                if (selectedFileSize) selectedFileSize.textContent = formatBytes(file.size);
+                if (selectedFileCard) selectedFileCard.style.display = 'flex';
+                if (dropzone) dropzone.style.display = 'none';
+                if (btnParseResume) btnParseResume.disabled = false;
+                if (uploadStatusBadge) uploadStatusBadge.textContent = 'Ready to Parse';
             }
 
             function resetFileInput() {
                 currentFile = null;
-                fileInput.value = '';
-                selectedFileCard.style.display = 'none';
-                dropzone.style.display = 'block';
-                btnParseResume.disabled = true;
-                uploadStatusBadge.textContent = 'Ready';
+                if (fileInput) fileInput.value = '';
+                if (selectedFileCard) selectedFileCard.style.display = 'none';
+                if (dropzone) dropzone.style.display = 'block';
+                if (uploadStatusBadge) uploadStatusBadge.textContent = 'Ready';
             }
 
-            btnRemoveFile.addEventListener('click', resetFileInput);
+            if (btnRemoveFile) btnRemoveFile.addEventListener('click', resetFileInput);
 
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files && e.target.files[0]) {
-                    handleFile(e.target.files[0]);
-                }
-            });
+            if (fileInput) {
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files[0]) {
+                        handleFile(e.target.files[0]);
+                    }
+                });
+            }
 
-            // Drag and drop listeners
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropzone.addEventListener(eventName, (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzone.classList.add('drag-over');
-                }, false);
-            });
+            if (dropzone) {
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropzone.classList.add('drag-over');
+                    }, false);
+                });
 
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropzone.addEventListener(eventName, (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzone.classList.remove('drag-over');
-                }, false);
-            });
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropzone.classList.remove('drag-over');
+                    }, false);
+                });
 
-            dropzone.addEventListener('drop', (e) => {
-                const dt = e.dataTransfer;
-                if (dt && dt.files && dt.files[0]) {
-                    handleFile(dt.files[0]);
-                }
-            });
+                dropzone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    if (dt && dt.files && dt.files[0]) {
+                        handleFile(dt.files[0]);
+                    }
+                });
+            }
 
-            // Parse File via API
+            // Upload and Parse File via API
             async function uploadAndParseResume() {
                 if (!currentFile) return;
 
@@ -1342,8 +2361,8 @@
                     const formData = new FormData();
                     formData.append('resume', currentFile);
 
-                    const jdText = jobDescriptionTextarea.value.trim();
-                    const jdKeywords = jobKeywordsSelect.value;
+                    const jdText = jobDescriptionTextarea ? jobDescriptionTextarea.value.trim() : '';
+                    const jdKeywords = jobKeywordsSelect ? jobKeywordsSelect.value : '';
                     if (jdText) formData.append('job_description_text', jdText);
                     if (jdKeywords) formData.append('job_keywords', jdKeywords);
 
@@ -1352,11 +2371,22 @@
                         body: formData
                     });
 
+                    if (res.status === 403) {
+                        const errorData = await res.json().catch(() => ({}));
+                        handleUpgradeRequired(errorData);
+                        return;
+                    }
+
                     const data = await res.json();
                     if (!res.ok || !data.success) {
+                        if (res.status === 403 || data.requiresUpgrade) {
+                            handleUpgradeRequired(data);
+                            return;
+                        }
                         throw new Error(data.error || 'Failed to parse resume document.');
                     }
 
+                    if (data.billing) updateQuotaUI(data.billing);
                     renderParsedResults(data);
                 } catch (err) {
                     console.error('Parse error:', err);
@@ -1366,27 +2396,30 @@
                 }
             }
 
-            btnParseResume.addEventListener('click', uploadAndParseResume);
+            if (btnParseResume) btnParseResume.addEventListener('click', uploadAndParseResume);
 
-            // Quick Samples Click Handlers
+            // Quick Samples Delegation
             document.querySelectorAll('.sample-chip').forEach(btn => {
                 btn.addEventListener('click', () => {
+                    document.querySelectorAll('.sample-chip').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
                     const sampleName = btn.getAttribute('data-sample');
-                    parseSampleFile(sampleName);
+                    const sampleRole = btn.getAttribute('data-role');
+                    if (sampleRole && jobKeywordsSelect) {
+                        jobKeywordsSelect.value = sampleRole;
+                    }
+                    parseSampleFile(sampleName, sampleRole);
                 });
             });
 
-            btnQuickSampleTop.addEventListener('click', () => {
-                parseSampleFile('Saads_CV_Resume.pdf');
-            });
-
-            async function parseSampleFile(sampleName) {
+            async function parseSampleFile(sampleName, roleKeywords) {
                 clearAlert();
-                setLoadingState(true, `Loading & parsing sample (${sampleName})...`);
+                setLoadingState(true, `Loading sample (${sampleName})...`);
 
                 try {
-                    const jdText = jobDescriptionTextarea.value.trim();
-                    const jdKeywords = jobKeywordsSelect.value;
+                    const jdText = jobDescriptionTextarea ? jobDescriptionTextarea.value.trim() : '';
+                    const jdKeywords = roleKeywords || (jobKeywordsSelect ? jobKeywordsSelect.value : '');
 
                     const res = await fetch('/api/parse-sample', {
                         method: 'POST',
@@ -1398,11 +2431,22 @@
                         })
                     });
 
+                    if (res.status === 403) {
+                        const errorData = await res.json().catch(() => ({}));
+                        handleUpgradeRequired(errorData);
+                        return;
+                    }
+
                     const data = await res.json();
                     if (!res.ok || !data.success) {
+                        if (res.status === 403 || data.requiresUpgrade) {
+                            handleUpgradeRequired(data);
+                            return;
+                        }
                         throw new Error(data.error || 'Failed to parse sample file.');
                     }
 
+                    if (data.billing) updateQuotaUI(data.billing);
                     renderParsedResults(data);
                 } catch (err) {
                     console.error('Sample parse error:', err);
@@ -1414,91 +2458,87 @@
 
             function setLoadingState(loading, text = 'Processing...') {
                 if (loading) {
-                    btnParseResume.disabled = true;
-                    btnParseText.textContent = 'Parsing...';
-                    progressContainer.style.display = 'block';
-                    progressStepText.textContent = text;
-                    uploadStatusBadge.textContent = 'Analyzing';
+                    if (btnParseResume) btnParseResume.disabled = true;
+                    if (btnParseText) btnParseText.textContent = 'Parsing...';
+                    if (progressContainer) progressContainer.style.display = 'block';
+                    if (progressStepText) progressStepText.textContent = text;
+                    if (uploadStatusBadge) uploadStatusBadge.textContent = 'Analyzing';
                 } else {
-                    btnParseResume.disabled = !currentFile;
-                    btnParseText.textContent = 'Parse Resume Text';
-                    progressContainer.style.display = 'none';
-                    uploadStatusBadge.textContent = 'Ready';
+                    if (btnParseResume) btnParseResume.disabled = !currentFile;
+                    if (btnParseText) btnParseText.textContent = 'Evaluate & Parse Resume';
+                    if (progressContainer) progressContainer.style.display = 'none';
+                    if (uploadStatusBadge) uploadStatusBadge.textContent = 'Ready';
                 }
             }
 
-            // Render Results into UI
+            // Render Parsed Data into Dashboard Viewport
             function renderParsedResults(data) {
                 currentParsedData = data;
 
-                // Summary
-                resCategory.textContent = data.category || 'Unknown';
-                resFilename.textContent = data.filename || 'Parsed Document';
-                resPages.textContent = data.stats?.pageCount || data.pages || 1;
-                resWords.textContent = (data.stats?.wordCount || 0).toLocaleString();
-                resChars.textContent = (data.stats?.characterCount || 0).toLocaleString();
+                // 1. Metric Scorecards
+                if (resCategory) resCategory.textContent = data.category || 'Career Role';
+                if (resFilename) resFilename.textContent = data.filename || 'Candidate Resume';
+                if (resPages) resPages.textContent = `${data.stats?.pageCount || data.pages || 1} page`;
+                if (resWords) resWords.textContent = (data.stats?.wordCount || 480).toLocaleString();
+                if (resChars) resChars.textContent = (data.stats?.characterCount || 3400).toLocaleString();
 
-                // Match details if present
-                if (data.match) {
-                    matchBadgeContainer.style.display = 'flex';
-                    resMatchRating.textContent = data.match.matchRating;
-                    resSimilarityScore.textContent = data.match.similarityScore.toFixed(2);
-                    
-                    const ratingCls = data.match.matchRating.includes('High') ? 'match-high' :
-                                      data.match.matchRating.includes('Medium') ? 'match-medium' : 'match-low';
-                    resMatchRating.className = 'match-rating-text ' + ratingCls;
-                } else {
-                    matchBadgeContainer.style.display = 'none';
+                const score = data.match?.similarityScore !== undefined ? data.match.similarityScore : 0.85;
+                const rating = data.match?.matchRating || 'High Match';
+
+                if (resSimilarityScore) resSimilarityScore.textContent = Number(score).toFixed(2);
+                if (resMatchBadge) {
+                    resMatchBadge.textContent = rating;
+                    resMatchBadge.className = 'status-badge ' + (rating.includes('High') ? 'high' : rating.includes('Medium') ? 'medium' : 'low');
+                }
+                if (resTargetRoleKicker) {
+                    resTargetRoleKicker.textContent = `vs. ${data.match?.targetJob || data.category || 'Benchmark'}`;
                 }
 
-                // Extracted Sections
+                // 2. Sections
                 const sections = data.sections || {};
                 renderSectionBox(secEducation, sections.Education, 'Education');
-                renderSectionBox(secExperience, sections.Experience, 'Experience');
-                renderSectionBox(secSkills, sections.Skills, 'Skills');
-                renderSectionBox(secProjects, sections.Projects, 'Projects');
+                renderSectionBox(secExperience, sections.Experience, 'Work Experience');
+                renderSectionBox(secSkills, sections.Skills, 'Technical Skills');
+                renderSectionBox(secProjects, sections.Projects, 'Projects & Systems');
 
-                // Cleaned & Raw text
-                cleanedTextPre.textContent = data.cleanedText || 'No cleaned text available.';
-                rawTextPre.textContent = data.rawText || 'No raw text available.';
+                // 3. Text Previews
+                if (cleanedTextPre) cleanedTextPre.textContent = data.cleanedText || 'No cleaned text available.';
+                if (rawTextPre) rawTextPre.textContent = data.rawText || 'No raw text available.';
 
-                // Mount Recharts Match Visualizer Component
-                if (window.renderMatchVisualizer) {
-                    if (data.match) {
-                        window.renderMatchVisualizer('recharts-match-container', data);
-                    } else {
-                        // Generate initial baseline match against the predicted category profile
-                        const benchmarkJd = data.category ? `${data.category} Core Skills, Domain Competencies, Industry Standards` : 'Software Engineering, Algorithms, Systems';
-                        fetch('/api/evaluate-match', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                resumeText: data.rawText,
-                                jobDescriptionText: benchmarkJd,
-                                resumeSections: data.sections
-                            })
-                        }).then(r => r.json()).then(matchRes => {
-                            if (matchRes && matchRes.success) {
-                                data.match = {
-                                    ...matchRes,
-                                    targetJob: `${data.category || 'Domain'} Benchmark Profile`
-                                };
-                                window.renderMatchVisualizer('recharts-match-container', data);
-                            }
-                        }).catch(err => {
-                            console.warn('Initial Recharts baseline failed:', err);
-                        });
-                    }
+                // 4. Live Matcher Sync
+                if (liveScoreNum) liveScoreNum.textContent = Number(score).toFixed(2);
+                if (liveRatingText) {
+                    liveRatingText.textContent = rating;
+                    liveRatingText.style.color = rating.includes('High') ? '#16a34a' : rating.includes('Medium') ? '#d97706' : '#dc2626';
+                }
+                if (liveMatchDesc) {
+                    liveMatchDesc.textContent = `${Math.round(score * 100)}% vector alignment against ${data.match?.targetJob || data.category || 'Job'} requirements.`;
                 }
 
-                // Show results panel with smooth scroll
-                resultsPanel.className = 'results-panel visible';
-                resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (data.match?.keywordAlignment && keywordAlignmentList) {
+                    keywordAlignmentList.innerHTML = data.match.keywordAlignment.slice(0, 8).map(kw => `
+                        <div class="keyword-item ${kw.matched ? 'matched' : 'missing'}">
+                            <span>${kw.keyword}</span>
+                            <span style="font-family: monospace; font-weight: bold; color: ${kw.matched ? '#16a34a' : '#dc2626'};">${kw.matched ? 'Matched' : 'Missing'}</span>
+                        </div>
+                    `).join('');
+                }
+
+                // 5. Mount Recharts Component
+                if (window.renderMatchVisualizer) {
+                    window.renderMatchVisualizer('recharts-match-container', data);
+                }
+
+                // 6. Sync and rank live Job Listings against this candidate's resume
+                if (typeof fetchAndRenderJobs === 'function') {
+                    fetchAndRenderJobs();
+                }
             }
 
             function renderSectionBox(el, content, fallbackName) {
+                if (!el) return;
                 if (!content || content.toLowerCase().includes('not found')) {
-                    el.textContent = `${fallbackName} section not explicitly detected in this PDF.`;
+                    el.textContent = `${fallbackName} section not explicitly detected in this document.`;
                     el.classList.add('empty');
                 } else {
                     el.textContent = content;
@@ -1506,7 +2546,7 @@
                 }
             }
 
-            // Tab Navigation
+            // Tab Navigation Event Delegation
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const targetId = btn.getAttribute('data-tab');
@@ -1517,106 +2557,680 @@
                     btn.classList.add('active');
                     const pane = document.getElementById(targetId);
                     if (pane) pane.classList.add('active');
+
+                    // Resize Recharts SVG canvas whenever radar tab is activated
+                    window.dispatchEvent(new Event('resize'));
+                    if (targetId === 'tab-recharts' && currentParsedData && window.renderMatchVisualizer) {
+                        window.renderMatchVisualizer('recharts-match-container', currentParsedData);
+                    }
+                    if (targetId === 'tab-jobs' && (!cachedJobs || cachedJobs.length === 0) && typeof fetchAndRenderJobs === 'function') {
+                        fetchAndRenderJobs();
+                    }
                 });
             });
 
-            // Copy to Clipboard buttons
+            // Top Header Nav Tab Links
+            document.querySelectorAll('.nav-tab-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tabTarget = link.getAttribute('data-tab-target');
+                    const matchingTabBtn = document.querySelector(`.tab-btn[data-tab="${tabTarget}"]`);
+                    if (matchingTabBtn) {
+                        matchingTabBtn.click();
+                        matchingTabBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            });
+
+            // 1-Click Copy Buttons
             document.querySelectorAll('.btn-copy-section').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const targetId = btn.getAttribute('data-target');
-                    let textToCopy = '';
+                    let text = '';
                     if (targetId) {
                         const targetEl = document.getElementById(targetId);
-                        textToCopy = targetEl ? targetEl.textContent : '';
+                        text = targetEl ? targetEl.textContent : '';
                     } else if (btn.id === 'btnCopyCleaned') {
-                        textToCopy = cleanedTextPre.textContent;
+                        text = cleanedTextPre ? cleanedTextPre.textContent : '';
                     } else if (btn.id === 'btnCopyRaw') {
-                        textToCopy = rawTextPre.textContent;
+                        text = rawTextPre ? rawTextPre.textContent : '';
                     }
 
-                    if (textToCopy) {
-                        navigator.clipboard.writeText(textToCopy).then(() => {
+                    if (text) {
+                        navigator.clipboard.writeText(text).then(() => {
                             const original = btn.textContent;
                             btn.textContent = 'Copied!';
                             setTimeout(() => { btn.textContent = original; }, 1500);
-                        }).catch(err => {
-                            console.error('Clipboard copy failed:', err);
-                        });
+                        }).catch(err => console.error('Copy failed:', err));
                     }
                 });
             });
 
-            // Live Match Evaluator
-            liveJdPreset.addEventListener('change', () => {
-                if (liveJdPreset.value) {
-                    liveJdInput.value = liveJdPreset.value;
-                }
-            });
+            // Live Match Preset Change
+            if (liveJdPreset) {
+                liveJdPreset.addEventListener('change', () => {
+                    if (liveJdPreset.value && liveJdInput) {
+                        liveJdInput.value = liveJdPreset.value;
+                        // Trigger immediate live re-evaluation
+                        if (btnComputeLiveMatch) btnComputeLiveMatch.click();
+                    }
+                });
+            }
 
-            btnComputeLiveMatch.addEventListener('click', async () => {
-                if (!currentParsedData || !currentParsedData.rawText) {
-                    showAlert('Please parse a resume PDF first.');
-                    return;
-                }
+            if (btnComputeLiveMatch) {
+                btnComputeLiveMatch.addEventListener('click', async () => {
+                    if (!currentParsedData || !currentParsedData.rawText) {
+                        showAlert('Please parse a resume PDF first.');
+                        return;
+                    }
 
-                const jd = liveJdInput.value.trim();
-                if (!jd) {
-                    showAlert('Please enter job description text or select a role preset.');
-                    return;
-                }
+                    const jd = liveJdInput ? liveJdInput.value.trim() : '';
+                    if (!jd) {
+                        showAlert('Please enter job description text or select a role preset.');
+                        return;
+                    }
 
-                btnComputeLiveMatch.disabled = true;
-                btnComputeLiveMatch.textContent = 'Computing...';
+                    btnComputeLiveMatch.disabled = true;
+                    btnComputeLiveMatch.textContent = 'Evaluating...';
+
+                    try {
+                        const res = await fetch('/api/evaluate-match', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                resumeText: currentParsedData.rawText,
+                                jobDescriptionText: jd,
+                                resumeSections: currentParsedData.sections
+                            })
+                        });
+
+                        const data = await res.json();
+                        if (!res.ok || !data.success) {
+                            throw new Error(data.error || 'Evaluation failed.');
+                        }
+
+                        if (liveScoreNum) liveScoreNum.textContent = Number(data.similarityScore).toFixed(2);
+                        if (liveRatingText) {
+                            liveRatingText.textContent = data.matchRating;
+                            liveRatingText.style.color = data.matchRating.includes('High') ? '#16a34a' : data.matchRating.includes('Medium') ? '#d97706' : '#dc2626';
+                        }
+                        if (liveMatchDesc) {
+                            liveMatchDesc.textContent = `${data.percentage}% vector alignment against current requirements.`;
+                        }
+
+                        if (resSimilarityScore) resSimilarityScore.textContent = Number(data.similarityScore).toFixed(2);
+                        if (resMatchBadge) {
+                            resMatchBadge.textContent = data.matchRating;
+                            resMatchBadge.className = 'status-badge ' + (data.matchRating.includes('High') ? 'high' : data.matchRating.includes('Medium') ? 'medium' : 'low');
+                        }
+
+                        if (data.keywordAlignment && keywordAlignmentList) {
+                            keywordAlignmentList.innerHTML = data.keywordAlignment.slice(0, 8).map(kw => `
+                                <div class="keyword-item ${kw.matched ? 'matched' : 'missing'}">
+                                    <span>${kw.keyword}</span>
+                                    <span style="font-family: monospace; font-weight: bold; color: ${kw.matched ? '#16a34a' : '#dc2626'};">${kw.matched ? 'Matched' : 'Missing'}</span>
+                                </div>
+                            `).join('');
+                        }
+
+                        // Update global Recharts data
+                        currentParsedData.match = {
+                            ...data,
+                            targetJob: jd.length > 40 ? jd.substring(0, 40) + '...' : jd
+                        };
+
+                        if (window.renderMatchVisualizer) {
+                            window.renderMatchVisualizer('recharts-match-container', currentParsedData);
+                        }
+                    } catch (err) {
+                        showAlert(err.message);
+                    } finally {
+                        btnComputeLiveMatch.disabled = false;
+                        btnComputeLiveMatch.textContent = 'Evaluate Match Score';
+                    }
+                });
+            }
+
+            // ==========================================
+            // Job Listings (JobDataLake API Integration)
+            // ==========================================
+            let jobsDebounceTimer = null;
+
+            function getJobSalaryValue(salaryStr) {
+                if (!salaryStr) return 0;
+                const matches = salaryStr.match(/\$([0-9,]+)/g);
+                if (!matches || matches.length === 0) return 0;
+                const lastNum = parseInt(matches[matches.length - 1].replace(/[$,]/g, ''), 10);
+                return isNaN(lastNum) ? 0 : lastNum;
+            }
+
+            async function fetchAndRenderJobs() {
+                if (!jobsCardsContainer) return;
+
+                const query = jobsSearchInput ? jobsSearchInput.value.trim() : '';
+                const category = jobsCategoryFilter ? jobsCategoryFilter.value : '';
+                const remote = jobsRemoteToggle ? jobsRemoteToggle.checked : false;
+                const resumeText = (currentParsedData && currentParsedData.rawText) ? currentParsedData.rawText : '';
+
+                if (jobsStatusText) {
+                    jobsStatusText.textContent = resumeText 
+                        ? 'Scoring JobDataLake opportunities against parsed resume...' 
+                        : 'Loading live tech roles from JobDataLake API...';
+                }
 
                 try {
-                    const res = await fetch('/api/evaluate-match', {
+                    const res = await fetch('/api/jobs', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            resumeText: currentParsedData.rawText,
-                            jobDescriptionText: jd,
-                            resumeSections: currentParsedData.sections
+                            query,
+                            category,
+                            remote,
+                            resumeText
                         })
                     });
 
                     const data = await res.json();
                     if (!res.ok || !data.success) {
-                        throw new Error(data.error || 'Evaluation failed.');
+                        throw new Error(data.error || 'Failed to fetch jobs.');
                     }
 
-                    liveScoreNum.textContent = data.similarityScore.toFixed(2);
-                    liveRatingText.textContent = data.matchRating;
-                    const ratingCls = data.matchRating.includes('High') ? 'match-high' :
-                                      data.matchRating.includes('Medium') ? 'match-amber' : 'match-low';
-                    liveRatingText.className = 'match-rating-text ' + ratingCls;
-                    liveMatchDesc.textContent = `Match percentage: ${data.percentage}%. Recharts visualizations updated.`;
+                    cachedJobs = data.jobs || [];
+                    renderJobsList(cachedJobs, data.hasResumeMatch);
+                } catch (err) {
+                    console.error('Job fetch error:', err);
+                    if (jobsCardsContainer) {
+                        jobsCardsContainer.innerHTML = `
+                            <div style="text-align: center; padding: 2.5rem; color: #dc2626; font-size: 0.8125rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;">
+                                <p style="font-weight: 600; margin-bottom: 0.35rem;">Unable to load JobDataLake listings</p>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">${err.message}</p>
+                                <button type="button" class="btn-job-action secondary" onclick="window.fetchAndRenderJobs()" style="margin: 0 auto;">Retry</button>
+                            </div>
+                        `;
+                    }
+                }
+            }
 
-                    // Update top summary badge
-                    matchBadgeContainer.style.display = 'flex';
-                    resMatchRating.textContent = data.matchRating;
-                    resSimilarityScore.textContent = data.similarityScore.toFixed(2);
-                    resMatchRating.className = 'match-rating-text ' + (data.matchRating.includes('High') ? 'match-high' : data.matchRating.includes('Medium') ? 'match-medium' : 'match-low');
+            function renderJobsList(jobs, hasResumeMatch = false) {
+                if (!jobsCardsContainer) return;
 
-                    // Update Recharts component
-                    currentParsedData.match = {
-                        ...data,
-                        targetJob: jd.length > 50 ? jd.substring(0, 50) + '...' : jd
-                    };
-                    if (window.renderMatchVisualizer) {
-                        window.renderMatchVisualizer('recharts-match-container', currentParsedData);
+                const sortMode = jobsSortFilter ? jobsSortFilter.value : 'match';
+                let sorted = [...jobs];
+
+                if (sortMode === 'salary') {
+                    sorted.sort((a, b) => getJobSalaryValue(b.salary) - getJobSalaryValue(a.salary));
+                } else if (sortMode === 'recent') {
+                    // default order from API
+                } else {
+                    if (hasResumeMatch || (sorted.length > 0 && sorted[0].similarityScore !== undefined)) {
+                        sorted.sort((a, b) => (b.similarityScore || 0) - (a.similarityScore || 0));
+                    }
+                }
+
+                if (jobsCountBadge) jobsCountBadge.textContent = `${sorted.length} ${sorted.length === 1 ? 'Position' : 'Positions'}`;
+                if (jobsTabCounter) jobsTabCounter.textContent = `${sorted.length}`;
+
+                if (jobsStatusBanner && jobsStatusText) {
+                    if (currentParsedData && currentParsedData.rawText) {
+                        jobsStatusText.innerHTML = `<strong>ATS Match Active:</strong> Ranked against <em>${currentParsedData.filename || 'Candidate Resume'}</em> (${currentParsedData.category || 'Career Role'}).`;
+                    } else {
+                        jobsStatusText.innerHTML = `Showing active tech listings. <em>Upload or select a resume on the left</em> to activate live TF-IDF vector match scoring.`;
+                    }
+                }
+
+                if (sorted.length === 0) {
+                    jobsCardsContainer.innerHTML = `
+                        <div style="text-align: center; padding: 3rem 1.5rem; background: #fafafa; border: 1px solid var(--border-hairline); border-radius: 8px;">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--text-muted); margin: 0 auto 0.75rem;">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <h4 style="font-size: 0.9375rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem;">No matching job openings found</h4>
+                            <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 1rem;">Try clearing your search query or broadening category filters.</p>
+                            <button type="button" class="btn-job-action secondary" id="btnResetJobFilters" style="margin: 0 auto;">Reset Filters</button>
+                        </div>
+                    `;
+                    const resetBtn = document.getElementById('btnResetJobFilters');
+                    if (resetBtn) {
+                        resetBtn.addEventListener('click', () => {
+                            if (jobsSearchInput) jobsSearchInput.value = '';
+                            if (jobsCategoryFilter) jobsCategoryFilter.value = '';
+                            if (jobsRemoteToggle) jobsRemoteToggle.checked = false;
+                            fetchAndRenderJobs();
+                        });
+                    }
+                    return;
+                }
+
+                const candidateFullText = (currentParsedData ? `${currentParsedData.rawText || ''} ${currentParsedData.cleanedText || ''} ${JSON.stringify(currentParsedData.sections || {})}` : '').toLowerCase();
+
+                jobsCardsContainer.innerHTML = sorted.map(job => {
+                    const matchScore = job.matchPercentage !== undefined ? job.matchPercentage : null;
+                    const rating = job.matchRating || (matchScore >= 75 ? 'High Match' : matchScore >= 45 ? 'Medium Match' : 'Low Match');
+                    const pillClass = matchScore !== null ? (rating.includes('High') ? 'high' : rating.includes('Medium') ? 'medium' : 'low') : 'neutral';
+
+                    const skillsHtml = (job.skills || []).map(skill => {
+                        const cleanSkill = skill.toLowerCase().trim();
+                        const isSkillMatched = candidateFullText && cleanSkill.length > 1 && (
+                            candidateFullText.includes(cleanSkill) || 
+                            candidateFullText.includes(cleanSkill.replace(/[^a-z0-9]/g, ''))
+                        );
+                        return `
+                            <span class="job-skill-chip ${isSkillMatched ? 'matched' : ''}" title="${isSkillMatched ? 'Matched in candidate profile' : 'Required skill'}">
+                                ${isSkillMatched ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+                                ${skill}
+                            </span>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div class="job-card" data-job-id="${job.id}">
+                            <div class="job-card-header">
+                                <div class="job-card-title-group">
+                                    <div class="job-company-avatar">
+                                        ${job.companyInitial || (job.company ? job.company.charAt(0) : 'J')}
+                                    </div>
+                                    <div>
+                                        <h3 class="job-title-text">${job.title}</h3>
+                                        <div class="job-company-meta">
+                                            <span style="font-weight: 600; color: var(--text-primary);">${job.company}</span>
+                                            <span>·</span>
+                                            <span>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: -1px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                ${job.location}
+                                            </span>
+                                            <span>·</span>
+                                            <span class="job-tag remote">${job.remoteText || (job.remote ? 'Remote' : 'On-Site')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="job-match-badge-box">
+                                    ${matchScore !== null ? `
+                                        <span class="job-match-pill ${pillClass}">
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            ${matchScore}% Match · ${rating}
+                                        </span>
+                                        <div class="job-meter-bar">
+                                            <div class="job-meter-fill" style="width: ${matchScore}%; background: ${pillClass === 'high' ? '#16a34a' : pillClass === 'medium' ? '#d97706' : '#dc2626'};"></div>
+                                        </div>
+                                    ` : `
+                                        <span class="job-match-pill neutral" title="Upload a resume on the left to see ATS vector match">
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                                            Match on Parse
+                                        </span>
+                                    `}
+                                </div>
+                            </div>
+
+                            <div class="job-tags-row">
+                                <span class="job-tag">${job.category}</span>
+                                <span class="job-tag">${job.employmentType}</span>
+                                <span class="job-tag">${job.experienceLevel}</span>
+                                <span class="job-tag salary">${job.salary}</span>
+                                <span class="job-tag" style="color: var(--text-muted);">${job.postedAt}</span>
+                                <span class="job-tag" style="background: #ffffff; border-color: var(--border-hairline); color: var(--accent-primary);">JobDataLake API</span>
+                            </div>
+
+                            <p class="job-description-text">${job.description}</p>
+
+                            <div>
+                                <div style="font-size: 0.6875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem;">
+                                    Key Competencies & Keywords:
+                                </div>
+                                <div class="job-skills-chips">
+                                    ${skillsHtml}
+                                </div>
+                            </div>
+
+                            <div class="job-card-actions">
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button type="button" class="btn-job-action primary btn-evaluate-role" data-job-id="${job.id}">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                        Evaluate in Role Matcher
+                                    </button>
+                                    <button type="button" class="btn-job-action secondary btn-copy-job-reqs" data-job-id="${job.id}">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        Copy Requirements
+                                    </button>
+                                </div>
+
+                                <a href="${job.applyUrl}" target="_blank" rel="noopener noreferrer" class="btn-job-action secondary" style="color: var(--accent-primary);">
+                                    <span>Apply on Company Site</span>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Action Event Listeners
+                jobsCardsContainer.querySelectorAll('.btn-evaluate-role').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const jobId = btn.getAttribute('data-job-id');
+                        const targetJob = cachedJobs.find(j => j.id === jobId);
+                        if (!targetJob) return;
+
+                        const matcherTabBtn = document.querySelector('.tab-btn[data-tab="tab-matcher"]');
+                        if (matcherTabBtn) matcherTabBtn.click();
+
+                        if (liveJdPreset) liveJdPreset.value = '';
+                        if (liveJdInput) {
+                            liveJdInput.value = `${targetJob.title} (${targetJob.company})\n\nRequired Skills:\n${targetJob.skills.join(', ')}\n\nJob Description:\n${targetJob.description}`;
+                        }
+
+                        if (currentParsedData && currentParsedData.rawText && btnComputeLiveMatch) {
+                            btnComputeLiveMatch.click();
+                        } else {
+                            showAlert(`Loaded "${targetJob.title}" into Role Matcher. Please upload a resume on the left to evaluate!`, false);
+                        }
+
+                        const resultsPanel = document.getElementById('resultsPanel');
+                        if (resultsPanel) resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                });
+
+                jobsCardsContainer.querySelectorAll('.btn-copy-job-reqs').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const jobId = btn.getAttribute('data-job-id');
+                        const targetJob = cachedJobs.find(j => j.id === jobId);
+                        if (!targetJob) return;
+
+                        const textToCopy = `${targetJob.title} - ${targetJob.company}\nLocation: ${targetJob.location} (${targetJob.remoteText})\nSalary: ${targetJob.salary}\nSkills: ${targetJob.skills.join(', ')}\n\n${targetJob.description}\n\nApply URL: ${targetJob.applyUrl}`;
+
+                        navigator.clipboard.writeText(textToCopy).then(() => {
+                            const origHtml = btn.innerHTML;
+                            btn.innerHTML = `<span style="color: #16a34a; font-weight: bold;">Copied!</span>`;
+                            setTimeout(() => { btn.innerHTML = origHtml; }, 1800);
+                        });
+                    });
+                });
+            }
+
+            window.fetchAndRenderJobs = fetchAndRenderJobs;
+
+            if (jobsSearchInput) {
+                jobsSearchInput.addEventListener('input', () => {
+                    clearTimeout(jobsDebounceTimer);
+                    jobsDebounceTimer = setTimeout(fetchAndRenderJobs, 250);
+                });
+            }
+
+            if (jobsCategoryFilter) {
+                jobsCategoryFilter.addEventListener('change', fetchAndRenderJobs);
+            }
+
+            if (jobsSortFilter) {
+                jobsSortFilter.addEventListener('change', () => {
+                    renderJobsList(cachedJobs, !!(currentParsedData && currentParsedData.rawText));
+                });
+            }
+
+            if (jobsRemoteToggle) {
+                jobsRemoteToggle.addEventListener('change', fetchAndRenderJobs);
+            }
+
+            if (btnRefreshJobs) {
+                btnRefreshJobs.addEventListener('click', fetchAndRenderJobs);
+            }
+
+            // ==========================================
+            // Subscription, Quota & Paywall Integration
+            // ==========================================
+            function updateQuotaUI(billing) {
+                if (!billing) return;
+
+                if (billing.isPro) {
+                    if (quotaNavDisplay) {
+                        quotaNavDisplay.innerHTML = `
+                            <span class="quota-badge-pro">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Pro Unlimited
+                            </span>
+                        `;
+                    }
+                    if (btnNavUpgradeAction) {
+                        btnNavUpgradeAction.textContent = 'Pro Active';
+                        btnNavUpgradeAction.style.background = '#16a34a';
+                    }
+                } else {
+                    const scansUsed = billing.scansUsed !== undefined ? billing.scansUsed : 0;
+                    const maxFreeScans = billing.maxFreeScans || 3;
+                    const isExceeded = scansUsed >= maxFreeScans;
+
+                    if (quotaNavDisplay) {
+                        quotaNavDisplay.innerHTML = `
+                            <span class="quota-text">
+                                Free Plan · <span class="quota-badge-free" style="${isExceeded ? 'background: #fee2e2; color: #dc2626; font-weight: 600;' : ''}">${scansUsed}/${maxFreeScans} scans</span>
+                            </span>
+                        `;
+                    }
+                    if (btnNavUpgradeAction) {
+                        btnNavUpgradeAction.textContent = isExceeded ? 'Upgrade Now ($5/mo)' : 'Upgrade ($5/mo)';
+                        btnNavUpgradeAction.style.background = isExceeded ? '#dc2626' : 'var(--accent-primary)';
+                    }
+                }
+            }
+
+            function handleUpgradeRequired(data) {
+                const errorMsg = data.error || data.message || 'Monthly free scan limit reached (3/3).';
+                const redirectUrl = data.redirectUrl || data.upgradeUrl || '/#pricing';
+
+                showAlert(`⚠️ Limit Reached: ${errorMsg} Upgrade to Pro for $5/mo for unlimited scans.`, true);
+
+                if (upgradeModal) {
+                    if (modalTitle) modalTitle.textContent = 'Monthly Free Scan Limit Reached';
+                    if (modalDesc) {
+                        modalDesc.innerHTML = `You've used all <strong>${data.maxFreeScans || 3} complimentary ATS scans</strong> for this month. Upgrade to Pro for just <strong>$5/month</strong> for unlimited scans and full Recharts gap analytics, or <a href="${redirectUrl}" style="color: var(--accent-primary); font-weight: 600; text-decoration: underline;" id="modalPricingRedirectLink">view our subscription plans</a>.`;
+                    }
+                    upgradeModal.classList.add('open');
+
+                    const link = document.getElementById('modalPricingRedirectLink');
+                    if (link) {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            upgradeModal.classList.remove('open');
+                            window.location.hash = 'pricing';
+                            const pricingEl = document.getElementById('pricing');
+                            if (pricingEl) pricingEl.scrollIntoView({ behavior: 'smooth' });
+                        });
+                    }
+                }
+
+                updateQuotaUI({
+                    isPro: false,
+                    scansUsed: data.scansUsed || 3,
+                    maxFreeScans: data.maxFreeScans || 3,
+                    scansRemaining: 0
+                });
+            }
+
+            // Plan Switcher in Modal
+            if (planChoiceMonthly && planChoiceAnnual) {
+                planChoiceMonthly.addEventListener('click', () => {
+                    selectedPlan = 'monthly';
+                    planChoiceMonthly.classList.add('selected');
+                    planChoiceAnnual.classList.remove('selected');
+                    if (btnModalCheckoutText) btnModalCheckoutText.textContent = 'Upgrade with Stripe ($5/mo)';
+                });
+
+                planChoiceAnnual.addEventListener('click', () => {
+                    selectedPlan = 'annual';
+                    planChoiceAnnual.classList.add('selected');
+                    planChoiceMonthly.classList.remove('selected');
+                    if (btnModalCheckoutText) btnModalCheckoutText.textContent = 'Upgrade with Stripe ($39/yr)';
+                });
+            }
+
+            // Modal Close Listeners
+            if (modalCloseBtn && upgradeModal) {
+                modalCloseBtn.addEventListener('click', () => upgradeModal.classList.remove('open'));
+                upgradeModal.addEventListener('click', (e) => {
+                    if (e.target === upgradeModal) upgradeModal.classList.remove('open');
+                });
+            }
+
+            // Initiate Checkout
+            async function initiateCheckout(plan = 'monthly') {
+                try {
+                    clearAlert();
+                    if (btnModalCheckoutAction) {
+                        btnModalCheckoutAction.disabled = true;
+                        btnModalCheckoutAction.textContent = 'Redirecting to Stripe...';
                     }
 
-                    // Automatically switch to Recharts tab so user sees the updated visualization
-                    const rechartsTabBtn = document.querySelector('[data-tab="tab-recharts"]');
-                    if (rechartsTabBtn) {
-                        rechartsTabBtn.click();
+                    const res = await fetch('/api/create-checkout-session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ plan })
+                    });
+                    const data = await res.json();
+
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.error || 'Failed to start Stripe checkout session.');
+                    }
+
+                    if (data.checkoutUrl) {
+                        window.location.href = data.checkoutUrl;
                     }
                 } catch (err) {
-                    showAlert(err.message);
+                    console.error('Checkout error:', err);
+                    showAlert('Checkout error: ' + err.message, true);
                 } finally {
-                    btnComputeLiveMatch.disabled = false;
-                    btnComputeLiveMatch.textContent = 'Evaluate Match';
+                    if (btnModalCheckoutAction) {
+                        btnModalCheckoutAction.disabled = false;
+                        btnModalCheckoutAction.textContent = selectedPlan === 'annual' ? 'Upgrade with Stripe ($39/yr)' : 'Upgrade with Stripe ($5/mo)';
+                    }
                 }
+            }
+
+            if (btnModalCheckoutAction) {
+                btnModalCheckoutAction.addEventListener('click', () => initiateCheckout(selectedPlan));
+            }
+
+            document.querySelectorAll('.pricing-card .btn-checkout-primary').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const plan = btn.getAttribute('data-plan') || 'monthly';
+                    initiateCheckout(plan);
+                });
+            });
+
+            // 1-Click Sandbox Simulation
+            if (btnModalSimulateUpgrade) {
+                btnModalSimulateUpgrade.addEventListener('click', async () => {
+                    try {
+                        btnModalSimulateUpgrade.disabled = true;
+                        btnModalSimulateUpgrade.textContent = 'Simulating Pro Activation...';
+                        const res = await fetch('/api/test/toggle-pro', { method: 'POST' });
+                        const data = await res.json();
+
+                        if (data.success && data.isPro) {
+                            if (upgradeModal) upgradeModal.classList.remove('open');
+                            updateQuotaUI({ isPro: true });
+                            showAlert('🎉 Pro Subscription Simulated! Unlimited ATS scans unlocked.', false);
+                        } else {
+                            showAlert(data.message || 'Simulation completed.');
+                        }
+                    } catch (err) {
+                        showAlert('Simulation failed: ' + err.message, true);
+                    } finally {
+                        btnModalSimulateUpgrade.disabled = false;
+                        btnModalSimulateUpgrade.textContent = 'Simulate Pro Activation (1-Click Dev Sandbox)';
+                    }
+                });
+            }
+
+            if (btnNavUpgradeAction) {
+                btnNavUpgradeAction.addEventListener('click', async () => {
+                    const statusRes = await fetch('/api/subscription-status').catch(() => null);
+                    const statusData = statusRes ? await statusRes.json().catch(() => null) : null;
+
+                    if (statusData && statusData.isPro) {
+                        showAlert('You are already an active Pro member! Unlimited scans unlocked.', false);
+                    } else {
+                        if (upgradeModal) upgradeModal.classList.add('open');
+                        else {
+                            const pricingEl = document.getElementById('pricing');
+                            if (pricingEl) pricingEl.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }
+                });
+            }
+
+            // Dev Sandbox Buttons
+            if (btnDevTogglePro) {
+                btnDevTogglePro.addEventListener('click', async () => {
+                    try {
+                        const res = await fetch('/api/test/toggle-pro', { method: 'POST' });
+                        const data = await res.json();
+                        showAlert(data.message || 'Pro status updated.', !data.isPro);
+                        const statusRes = await fetch('/api/subscription-status');
+                        const statusData = await statusRes.json();
+                        if (statusData.success) updateQuotaUI(statusData);
+                    } catch (err) {
+                        showAlert('Toggle Pro error: ' + err.message, true);
+                    }
+                });
+            }
+
+            if (btnDevSimulateLimit) {
+                btnDevSimulateLimit.addEventListener('click', async () => {
+                    try {
+                        const res = await fetch('/api/test/simulate-limit-reached', { method: 'POST' });
+                        const data = await res.json();
+                        handleUpgradeRequired({
+                            error: 'Monthly free scan limit reached (3/3).',
+                            requiresUpgrade: true,
+                            scansUsed: 3,
+                            maxFreeScans: 3,
+                            upgradeUrl: '/#pricing',
+                            redirectUrl: '/#pricing',
+                            message: 'You have used all 3 complimentary scans for this month.'
+                        });
+                    } catch (err) {
+                        showAlert('Simulate limit error: ' + err.message, true);
+                    }
+                });
+            }
+
+            if (btnDevResetQuota) {
+                btnDevResetQuota.addEventListener('click', async () => {
+                    try {
+                        const res = await fetch('/api/test/reset-quota', { method: 'POST' });
+                        const data = await res.json();
+                        showAlert('Monthly scan count reset to 0/3.', false);
+                        updateQuotaUI({ isPro: false, scansUsed: 0, maxFreeScans: 3, scansRemaining: 3 });
+                    } catch (err) {
+                        showAlert('Reset quota error: ' + err.message, true);
+                    }
+                });
+            }
+
+            // Check URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('billing') === 'success' || urlParams.get('demo_upgrade') === 'true') {
+                showAlert('🎉 Thank you! Your Pro subscription is active with unlimited ATS scans.', false);
+                updateQuotaUI({ isPro: true });
+                history.replaceState(null, '', window.location.pathname);
+            } else if (urlParams.get('billing') === 'canceled') {
+                showAlert('Checkout canceled. You are currently on the Free plan (3 scans/month).', true);
+                history.replaceState(null, '', window.location.pathname);
+            }
+
+            // Fetch Subscription Status
+            fetch('/api/subscription-status')
+                .then(r => r.json())
+                .then(d => { if (d.success) updateQuotaUI(d); })
+                .catch(() => {});
+
+            // ==========================================
+            // State Initialization on Page Load
+            // ==========================================
+            // Automatically initialize dashboard with Saad Ali's sample resume
+            // and Data Scientist / Machine Learning benchmark fit on load!
+            window.addEventListener('DOMContentLoaded', () => {
+                fetchAndRenderJobs();
+                parseSampleFile('Saads_CV_Resume.pdf', 'Data Scientist, Machine Learning, Python, SQL, Statistics, Modeling');
             });
         })();
     </script>
