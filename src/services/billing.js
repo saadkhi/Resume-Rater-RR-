@@ -33,63 +33,42 @@ export const billingService = {
 
     const plan = planType === 'annual' ? PLANS.ANNUAL : PLANS.MONTHLY;
 
-    // In production with Stripe credentials
-    if (stripeClient && process.env.STRIPE_SECRET_KEY) {
-      let sub = db.subscriptions.findByUserId(userId);
-      let customerId = sub?.stripeCustomerId;
-
-      if (!customerId) {
-        const customer = await stripeClient.customers.create({
-          email: user.email,
-          name: user.name,
-          metadata: { userId }
-        });
-        customerId = customer.id;
-      }
-
-      const session = await stripeClient.checkout.sessions.create({
-        customer: customerId,
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: plan.stripePriceId,
-            quantity: 1
-          }
-        ],
-        mode: 'subscription',
-        success_url: `${hostUrl}/?billing=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${hostUrl}/#pricing?billing=canceled`,
-        client_reference_id: userId,
-        metadata: {
-          userId,
-          planType
-        }
-      });
-
-      return { checkoutUrl: session.url, sessionId: session.id, isMock: false };
+    if (!stripeClient || !process.env.STRIPE_SECRET_KEY) {
+      throw new Error('Payment processing is not configured. Please contact support.');
     }
 
-    // Demo / Dev Mode Fallback:
-    // Simulates instant upgrade for sandbox evaluation when Stripe keys aren't provided
-    const oneMonthFromNow = new Date();
-    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+    let sub = db.subscriptions.findByUserId(userId);
+    let customerId = sub?.stripeCustomerId;
 
-    db.subscriptions.upsert({
-      userId,
-      stripeCustomerId: `cus_demo_${userId}`,
-      stripeSubscriptionId: `sub_demo_${Date.now()}`,
-      stripePriceId: plan.stripePriceId,
-      planTier: plan.id,
-      status: 'active',
-      currentPeriodEnd: oneMonthFromNow.toISOString()
+    if (!customerId) {
+      const customer = await stripeClient.customers.create({
+        email: user.email,
+        name: user.name,
+        metadata: { userId }
+      });
+      customerId = customer.id;
+    }
+
+    const session = await stripeClient.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: plan.stripePriceId,
+          quantity: 1
+        }
+      ],
+      mode: 'subscription',
+      success_url: `${hostUrl}/?billing=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${hostUrl}/#pricing?billing=canceled`,
+      client_reference_id: userId,
+      metadata: {
+        userId,
+        planType
+      }
     });
 
-    return {
-      checkoutUrl: `/?billing=success&demo_upgrade=true&plan=${plan.id}`,
-      sessionId: `mock_sess_${Date.now()}`,
-      isMock: true,
-      message: 'Demo mode upgrade applied: Pro tier activated ($5/mo simulated).'
-    };
+    return { checkoutUrl: session.url, sessionId: session.id, isMock: false };
   },
 
   /**
@@ -101,19 +80,15 @@ export const billingService = {
       throw new Error('No active Stripe customer found.');
     }
 
-    if (stripeClient && process.env.STRIPE_SECRET_KEY) {
-      const portal = await stripeClient.billingPortal.sessions.create({
-        customer: sub.stripeCustomerId,
-        return_url: returnUrl
-      });
-      return { portalUrl: portal.url };
+    if (!stripeClient || !process.env.STRIPE_SECRET_KEY) {
+      throw new Error('Payment processing is not configured.');
     }
 
-    // Demo portal fallback
-    return {
-      portalUrl: `${returnUrl}/#pricing?portal=demo`,
-      isMock: true
-    };
+    const portal = await stripeClient.billingPortal.sessions.create({
+      customer: sub.stripeCustomerId,
+      return_url: returnUrl
+    });
+    return { portalUrl: portal.url };
   },
 
   /**
@@ -122,26 +97,15 @@ export const billingService = {
   async handleWebhook(rawBody, signatureHeader) {
     let event;
 
-    if (stripeClient && stripeWebhookSecret) {
-      try {
-        event = stripeClient.webhooks.constructEvent(rawBody, signatureHeader, stripeWebhookSecret);
-      } catch (err) {
-        console.error('⚠️ Stripe Webhook signature verification failed:', err.message);
-        throw new Error(`Webhook Error: ${err.message}`);
-      }
-    } else {
-      // In dev/test when webhook secret is omitted, parse payload directly
-      try {
-        if (Buffer.isBuffer(rawBody)) {
-          event = JSON.parse(rawBody.toString('utf8'));
-        } else if (typeof rawBody === 'string') {
-          event = JSON.parse(rawBody);
-        } else {
-          event = rawBody;
-        }
-      } catch (err) {
-        throw new Error('Invalid JSON webhook payload: ' + err.message);
-      }
+    if (!stripeClient || !stripeWebhookSecret) {
+      throw new Error('Webhook processing is not configured.');
+    }
+
+    try {
+      event = stripeClient.webhooks.constructEvent(rawBody, signatureHeader, stripeWebhookSecret);
+    } catch (err) {
+      console.error('Stripe Webhook signature verification failed:', err.message);
+      throw new Error(`Webhook Error: ${err.message}`);
     }
 
     if (!event || !event.type) {

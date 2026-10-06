@@ -2118,6 +2118,7 @@ PROJECTS
         </section>
 
         <!-- Sandbox / Developer Controls -->
+        <% if (typeof isDevMode !== 'undefined' && isDevMode) { %>
         <div class="dev-sandbox-bar">
             <div>
                 <strong>Sandbox & Testing Controls:</strong>
@@ -2129,6 +2130,7 @@ PROJECTS
                 <button type="button" class="dev-sandbox-btn" id="btnDevResetQuota">Reset Scans to 0/3</button>
             </div>
         </div>
+        <% } %>
     </main>
 
     <!-- Paywall Modal Dialog -->
@@ -2161,9 +2163,11 @@ PROJECTS
                 <span id="btnModalCheckoutText">Upgrade with Stripe ($5/mo)</span>
             </button>
 
+            <% if (typeof isDevMode !== 'undefined' && isDevMode) { %>
             <button type="button" class="btn-dev-simulate" id="btnModalSimulateUpgrade">
                 Simulate Pro Activation (1-Click Dev Sandbox)
             </button>
+            <% } %>
         </div>
     </div>
 

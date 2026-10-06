@@ -9,12 +9,15 @@ import { fileURLToPath } from 'url';
 import { db } from './src/db/index.js';
 import { billingService, checkSubscriptionAndQuota, PLANS } from './src/services/billing.js';
 import { jobsService } from './src/services/jobs.js';
+import { apiLimiter, uploadLimiter, billingLimiter, getSafeErrorMessage, validatePdfMagicBytes, cleanupFile } from './src/middleware/security.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+const isDevMode = !isProduction;
 
 // Vercel / Serverless Read-Only File System Compatibility
 const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NOW_REGION);
@@ -59,17 +62,23 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}_${safeName}`);
   }
 });
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 15 * 1024 * 1024,
+    files: 1
+  }
+});
 
 // Stripe Webhook Endpoint (Requires raw JSON buffer for signature verification)
-app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json', limit: '2mb' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   try {
     const result = await billingService.handleWebhook(req.body, sig);
     res.json(result);
   } catch (err) {
     console.error('Stripe webhook error:', err.message);
-    res.status(400).send(`Webhook Error: ${err.message}`);
+    res.status(400).json({ error: getSafeErrorMessage(err, 'Webhook verification failed.') });
   }
 });
 
@@ -100,6 +109,7 @@ function renderIndexDashboard(req, res, customData = {}) {
       resume_match_rating: null,
       numerical_similarity_score: null,
       csv_data: null,
+      isDevMode,
       billing: {
         isPro: !!sub,
         planTier: sub?.planTier || 'free',
@@ -142,18 +152,18 @@ function renderIndexDashboard(req, res, customData = {}) {
     return res.render('index', templateData, (err, html) => {
       if (err) {
         console.error('EJS view rendering error:', err);
-        return res.status(500).send(`<!DOCTYPE html><html><body><h2>Error Rendering Resume Rater Dashboard</h2><p>${err.message}</p></body></html>`);
+        return res.status(500).send('<!DOCTYPE html><html><body><h2>Error Rendering Resume Rater Dashboard</h2><p>An unexpected error occurred while loading the dashboard.</p></body></html>');
       }
       return res.send(html);
     });
   } catch (err) {
     console.error('renderIndexDashboard error:', err);
-    return res.status(500).send(`<!DOCTYPE html><html><body><h2>Dashboard Load Failure</h2><p>${err.message}</p></body></html>`);
+    return res.status(500).send('<!DOCTYPE html><html><body><h2>Dashboard Load Failure</h2><p>An unexpected error occurred while loading the dashboard.</p></body></html>');
   }
 }
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.json({ limit: '1mb' }));
 
 const publicDir = fs.existsSync(path.join(__dirname, 'public'))
   ? path.join(__dirname, 'public')
@@ -539,7 +549,7 @@ async function analyzeResumePdf(filePath, originalName, jobDescriptionText = '',
 // REST API Endpoints
 
 // 1. API: Parse uploaded PDF resume (Protected by subscription & quota check)
-app.post('/api/parse-resume', checkSubscriptionAndQuota, upload.single('resume'), async (req, res) => {
+app.post('/api/parse-resume', uploadLimiter, checkSubscriptionAndQuota, upload.single('resume'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -550,16 +560,30 @@ app.post('/api/parse-resume', checkSubscriptionAndQuota, upload.single('resume')
 
     const isPdf = req.file.mimetype === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf');
     if (!isPdf) {
+      cleanupFile(req.file.path);
       return res.status(400).json({
         success: false,
         error: 'Unsupported file type. Please upload a valid PDF document.'
       });
     }
 
+    if (!validatePdfMagicBytes(req.file.path)) {
+      cleanupFile(req.file.path);
+      return res.status(400).json({
+        success: false,
+        error: 'The uploaded file is not a valid PDF document.'
+      });
+    }
+
     const jobDescriptionText = req.body.job_description_text || '';
     const jobKeywords = req.body.job_keywords || '';
 
-    const analysis = await analyzeResumePdf(req.file.path, req.file.originalname, jobDescriptionText, jobKeywords);
+    let analysis;
+    try {
+      analysis = await analyzeResumePdf(req.file.path, req.file.originalname, jobDescriptionText, jobKeywords);
+    } finally {
+      cleanupFile(req.file.path);
+    }
 
     // Consume scan quota for free users upon successful parse
     if (req.consumeScanQuota) req.consumeScanQuota();
@@ -606,57 +630,47 @@ app.post('/api/parse-resume', checkSubscriptionAndQuota, upload.single('resume')
     });
   } catch (err) {
     console.error('API /api/parse-resume error:', err);
+    if (req.file) cleanupFile(req.file.path);
     return res.status(500).json({
       success: false,
-      error: 'Failed to parse resume: ' + err.message
+      error: getSafeErrorMessage(err, 'Failed to parse resume document.')
     });
   }
 });
 
-// 2. API: List available sample resumes for quick testing
+// 2. API: List available sample resumes for quick testing (bundled samples only)
+const BUNDLED_SAMPLE_FILES = [
+  'Saads_CV_Resume.pdf',
+  'resume1.pdf',
+  'resume2.pdf',
+  'Saad_Ali_ResumeCV_Old.pdf'
+];
+
 app.get('/api/sample-resumes', (req, res) => {
   try {
-    const samplesMap = new Map();
-
-    const scanDir = (dir) => {
-      if (fs.existsSync(dir)) {
-        try {
-          const files = fs.readdirSync(dir);
-          files.filter(f => f.toLowerCase().endsWith('.pdf')).forEach(filename => {
-            if (!samplesMap.has(filename)) {
-              const filePath = path.join(dir, filename);
-              const stat = fs.statSync(filePath);
-              samplesMap.set(filename, {
-                filename,
-                displayName: filename.replace(/^\d+_/, '').replace(/\.pdf$/i, '').replace(/_/g, ' '),
-                sizeBytes: stat.size,
-                sizeFormatted: `${(stat.size / 1024).toFixed(1)} KB`
-              });
-            }
-          });
-        } catch (e) {
-          console.warn('Directory scan notice for', dir, e.message);
-        }
+    const samples = BUNDLED_SAMPLE_FILES.map(filename => {
+      const filePath = resolveResumePath(filename);
+      try {
+        const stat = fs.statSync(filePath);
+        return {
+          filename,
+          displayName: filename.replace(/^\d+_/, '').replace(/\.pdf$/i, '').replace(/_/g, ' '),
+          sizeBytes: stat.size,
+          sizeFormatted: `${(stat.size / 1024).toFixed(1)} KB`
+        };
+      } catch {
+        return null;
       }
-    };
+    }).filter(Boolean);
 
-    scanDir(bundledUploadsDir);
-    if (writableUploadsDir !== bundledUploadsDir) {
-      scanDir(writableUploadsDir);
-    }
-    const cwdUploads = path.join(process.cwd(), 'uploads');
-    if (cwdUploads !== bundledUploadsDir && cwdUploads !== writableUploadsDir) {
-      scanDir(cwdUploads);
-    }
-
-    return res.json({ success: true, samples: Array.from(samplesMap.values()) });
+    return res.json({ success: true, samples });
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
   }
 });
 
 // 3. API: Parse an existing sample resume (Protected by subscription & quota check)
-app.post('/api/parse-sample', checkSubscriptionAndQuota, async (req, res) => {
+app.post('/api/parse-sample', apiLimiter, checkSubscriptionAndQuota, async (req, res) => {
   try {
     const { sampleName, job_description_text, job_keywords } = req.body;
     if (!sampleName) {
@@ -692,13 +706,13 @@ app.post('/api/parse-sample', checkSubscriptionAndQuota, async (req, res) => {
     console.error('API /api/parse-sample error:', err);
     return res.status(500).json({
       success: false,
-      error: 'Failed to parse sample resume: ' + err.message
+      error: getSafeErrorMessage(err, 'Failed to parse sample resume.')
     });
   }
 });
 
 // 4. API: Interactive Match Evaluator against Job Description
-app.post('/api/evaluate-match', (req, res) => {
+app.post('/api/evaluate-match', apiLimiter, (req, res) => {
   try {
     const { resumeText, jobDescriptionText, resumeSections } = req.body;
     if (!resumeText || !jobDescriptionText) {
@@ -717,30 +731,8 @@ app.post('/api/evaluate-match', (req, res) => {
   } catch (err) {
     return res.status(500).json({
       success: false,
-      error: 'Evaluation failed: ' + err.message
+      error: getSafeErrorMessage(err, 'Evaluation failed.')
     });
-  }
-});
-
-// 5. API: View CSV records
-app.get('/api/csv-records', (req, res) => {
-  try {
-    const tmpCsv = path.join(os.tmpdir(), 'cv_sections.csv');
-    const localCsv = path.join(__dirname, 'cv_sections.csv');
-    const targetCsv = fs.existsSync(tmpCsv) ? tmpCsv : (fs.existsSync(localCsv) ? localCsv : null);
-
-    if (!targetCsv) {
-      return res.json({ success: true, records: [], count: 0 });
-    }
-    const content = fs.readFileSync(targetCsv, 'utf8');
-    const lines = content.split('\n').filter(Boolean);
-    const records = [];
-    for (let i = 1; i < lines.length; i++) {
-      records.push(lines[i]);
-    }
-    return res.json({ success: true, count: records.length, records });
-  } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -763,14 +755,14 @@ const handleJobsRequest = async (req, res) => {
     return res.json(result);
   } catch (err) {
     console.error('API /api/jobs error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: getSafeErrorMessage(err, 'Failed to fetch job listings.') });
   }
 };
-app.get('/api/jobs', handleJobsRequest);
-app.post('/api/jobs', handleJobsRequest);
+app.get('/api/jobs', apiLimiter, handleJobsRequest);
+app.post('/api/jobs', apiLimiter, handleJobsRequest);
 
 // 6. API: Create Stripe Checkout Session ($5/mo or $39/yr)
-app.post('/api/create-checkout-session', async (req, res) => {
+app.post('/api/create-checkout-session', billingLimiter, async (req, res) => {
   try {
     const userId = req.headers['x-user-id'] || 'usr_demo_001';
     const { plan } = req.body || {}; // 'monthly' | 'annual'
@@ -782,12 +774,12 @@ app.post('/api/create-checkout-session', async (req, res) => {
     res.json({ success: true, ...result });
   } catch (err) {
     console.error('Create checkout session error:', err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: getSafeErrorMessage(err, 'Failed to start checkout session.') });
   }
 });
 
 // 7. API: Customer Portal Session for Managing Subscriptions
-app.post('/api/create-portal-session', async (req, res) => {
+app.post('/api/create-portal-session', billingLimiter, async (req, res) => {
   try {
     const userId = req.headers['x-user-id'] || 'usr_demo_001';
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
@@ -797,7 +789,7 @@ app.post('/api/create-portal-session', async (req, res) => {
     const result = await billingService.createPortalSession(userId, returnUrl);
     res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: getSafeErrorMessage(err, 'Failed to create portal session.') });
   }
 });
 
@@ -821,9 +813,12 @@ app.get('/api/subscription-status', (req, res) => {
       scansRemaining: sub ? 'unlimited' : Math.max(0, usage.maxFreeScans - usage.scansUsed)
     });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
   }
 });
+
+// === Development-only test endpoints (completely disabled in production) ===
+if (isDevMode) {
 
 // 9. API: Dev/Test Toggle Pro status
 app.post('/api/test/toggle-pro', (req, res) => {
@@ -853,7 +848,7 @@ app.post('/api/test/toggle-pro', (req, res) => {
       res.json({ success: true, isPro: true, message: 'Activated Pro tier subscription ($5/month simulated).' });
     }
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
   }
 });
 
@@ -865,7 +860,7 @@ app.post('/api/test/reset-quota', (req, res) => {
     const usage = db.userUsage.setScansUsed(userId, 0, currentMonth);
     res.json({ success: true, usage, message: 'Monthly scan count reset to 0/3.' });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
   }
 });
 
@@ -884,7 +879,7 @@ app.post('/api/test/simulate-limit-reached', (req, res) => {
     const usage = db.userUsage.setScansUsed(userId, 3, currentMonth);
     res.json({ success: true, usage, isPro: false, message: 'Simulated 3/3 scans used. Next scan will trigger HTTP 403 upgrade paywall.' });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
   }
 });
 
@@ -936,17 +931,20 @@ app.post('/api/test/simulate-webhook', async (req, res) => {
     const result = await billingService.handleWebhook(mockPayload, null);
     res.json({ success: true, simulatedEvent: mockPayload.type, result });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
   }
 });
+
+} // end if (isDevMode)
 
 // Routes
 app.get('/', (req, res) => renderIndexDashboard(req, res));
 
-app.post('/upload', upload.fields([
+app.post('/upload', uploadLimiter, upload.fields([
   { name: 'resume', maxCount: 1 },
   { name: 'job_description', maxCount: 1 }
 ]), async (req, res) => {
+  const uploadedFiles = [];
   try {
     const userId = req.headers['x-user-id'] || 'usr_demo_001';
     let user = db.users.find(userId);
@@ -993,6 +991,8 @@ app.post('/upload', upload.fields([
     const files = req.files || {};
     const resumeFile = files.resume ? files.resume[0] : null;
     const jobDescriptionFile = files.job_description ? files.job_description[0] : null;
+    if (resumeFile) uploadedFiles.push(resumeFile.path);
+    if (jobDescriptionFile) uploadedFiles.push(jobDescriptionFile.path);
     const jobDescriptionText = req.body.job_description_text ? req.body.job_description_text.trim() : '';
     const jobKeywords = req.body.job_keywords ? req.body.job_keywords.trim() : '';
 
@@ -1112,12 +1112,14 @@ app.post('/upload', upload.fields([
   } catch (err) {
     console.error('Error handling upload:', err);
     return renderIndexDashboard(req, res, {
-      error: 'An error occurred while evaluating the resume: ' + err.message,
+      error: 'An error occurred while evaluating the resume.' + (isDevMode ? ' ' + err.message : ''),
       prediction_category: null,
       resume_match_rating: null,
       numerical_similarity_score: null,
       csv_data: null
     });
+  } finally {
+    uploadedFiles.forEach(fp => cleanupFile(fp));
   }
 });
 
@@ -1131,9 +1133,9 @@ app.use((err, req, res, next) => {
     return next(err);
   }
   if (req.accepts('html')) {
-    return res.status(500).send(`<!DOCTYPE html><html><body><h2>Resume Rater Server Error</h2><p>${err.message}</p></body></html>`);
+    return res.status(500).send('<!DOCTYPE html><html><body><h2>Resume Rater Server Error</h2><p>An unexpected error occurred. Please try again.</p></body></html>');
   }
-  return res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
+  return res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
 });
 
 // Listen on port only when run directly (not under Vercel serverless functions)

@@ -11,6 +11,7 @@
     "ejs": "^7.0.1",
     "esbuild": "^0.28.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^7.4.0",
     "multer": "^2.4.0",
     "pdf-parse": "^2.4.5",
     "react": "^19.3.0",

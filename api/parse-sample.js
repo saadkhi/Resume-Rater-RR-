@@ -12,7 +12,7 @@ export default function handler(req, res) {
     if (!res.headersSent) {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ success: false, error: err.message }));
+      res.end(JSON.stringify({ success: false, error: 'An unexpected error occurred.' }));
     }
   }
 }
