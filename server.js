@@ -1,5 +1,6 @@
 import './src/polyfills.js';
 import express from 'express';
+import ejs from 'ejs';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -73,10 +74,83 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 });
 
 app.set('view engine', 'ejs');
-const viewsDir = fs.existsSync(path.join(__dirname, 'views'))
-  ? path.join(__dirname, 'views')
-  : path.join(process.cwd(), 'views');
-app.set('views', viewsDir);
+const candidateViewsDirs = [
+  path.join(process.cwd(), 'views'),
+  path.join(__dirname, 'views'),
+  path.join(__dirname, '..', 'views'),
+  path.join('/var/task', 'views'),
+  path.resolve('views')
+];
+const validViewsDirs = candidateViewsDirs.filter(d => {
+  try { return fs.existsSync(d); } catch { return false; }
+});
+app.set('views', validViewsDirs.length > 0 ? validViewsDirs : path.join(process.cwd(), 'views'));
+
+// Resilient template renderer for serverless environments
+function renderIndexDashboard(req, res, customData = {}) {
+  try {
+    const userId = req.headers['x-user-id'] || 'usr_demo_001';
+    const sub = db.subscriptions.findActiveByUserId(userId);
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const usage = db.userUsage.getMonthlyUsage(userId, currentMonth);
+
+    const templateData = {
+      error: null,
+      prediction_category: null,
+      resume_match_rating: null,
+      numerical_similarity_score: null,
+      csv_data: null,
+      billing: {
+        isPro: !!sub,
+        planTier: sub?.planTier || 'free',
+        scansUsed: usage ? usage.scansUsed : 0,
+        maxFreeScans: usage ? usage.maxFreeScans : 3,
+        scansRemaining: sub ? 'unlimited' : Math.max(0, (usage ? usage.maxFreeScans : 3) - (usage ? usage.scansUsed : 0))
+      },
+      ...customData
+    };
+
+    // Attempt direct template read first to bypass runtime view lookup quirks
+    const templateSearchPaths = [
+      path.join(process.cwd(), 'views', 'index.ejs'),
+      path.join(__dirname, 'views', 'index.ejs'),
+      path.join(__dirname, '..', 'views', 'index.ejs'),
+      path.join('/var/task', 'views', 'index.ejs'),
+      path.resolve('views', 'index.ejs')
+    ];
+
+    let templateContent = null;
+    for (const p of templateSearchPaths) {
+      if (fs.existsSync(p)) {
+        try {
+          templateContent = fs.readFileSync(p, 'utf8');
+          if (templateContent) break;
+        } catch {
+          // continue
+        }
+      }
+    }
+
+    if (templateContent) {
+      const html = ejs.render(templateContent, templateData, {
+        views: validViewsDirs
+      });
+      return res.send(html);
+    }
+
+    // Fallback to res.render with error interception
+    return res.render('index', templateData, (err, html) => {
+      if (err) {
+        console.error('EJS view rendering error:', err);
+        return res.status(500).send(`<!DOCTYPE html><html><body><h2>Error Rendering Resume Rater Dashboard</h2><p>${err.message}</p></body></html>`);
+      }
+      return res.send(html);
+    });
+  } catch (err) {
+    console.error('renderIndexDashboard error:', err);
+    return res.status(500).send(`<!DOCTYPE html><html><body><h2>Dashboard Load Failure</h2><p>${err.message}</p></body></html>`);
+  }
+}
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -867,27 +941,7 @@ app.post('/api/test/simulate-webhook', async (req, res) => {
 });
 
 // Routes
-app.get('/', (req, res) => {
-  const userId = req.headers['x-user-id'] || 'usr_demo_001';
-  const sub = db.subscriptions.findActiveByUserId(userId);
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const usage = db.userUsage.getMonthlyUsage(userId, currentMonth);
-
-  res.render('index', {
-    error: null,
-    prediction_category: null,
-    resume_match_rating: null,
-    numerical_similarity_score: null,
-    csv_data: null,
-    billing: {
-      isPro: !!sub,
-      planTier: sub?.planTier || 'free',
-      scansUsed: usage.scansUsed,
-      maxFreeScans: usage.maxFreeScans,
-      scansRemaining: sub ? 'unlimited' : Math.max(0, usage.maxFreeScans - usage.scansUsed)
-    }
-  });
-});
+app.get('/', (req, res) => renderIndexDashboard(req, res));
 
 app.post('/upload', upload.fields([
   { name: 'resume', maxCount: 1 },
@@ -1041,7 +1095,7 @@ app.post('/upload', upload.fields([
       { Section: 'Projects', Content: resumeSections.Projects }
     ];
 
-    res.render('index', {
+    return renderIndexDashboard(req, res, {
       error: null,
       prediction_category: predictionId,
       resume_match_rating: matchRating,
@@ -1057,7 +1111,7 @@ app.post('/upload', upload.fields([
     });
   } catch (err) {
     console.error('Error handling upload:', err);
-    res.render('index', {
+    return renderIndexDashboard(req, res, {
       error: 'An error occurred while evaluating the resume: ' + err.message,
       prediction_category: null,
       resume_match_rating: null,
@@ -1070,8 +1124,27 @@ app.post('/upload', upload.fields([
 // Train classifier on startup
 trainClassifier();
 
+// Global Express error handler to prevent serverless function crashes
+app.use((err, req, res, next) => {
+  console.error('Global Server Error:', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  if (req.accepts('html')) {
+    return res.status(500).send(`<!DOCTYPE html><html><body><h2>Resume Rater Server Error</h2><p>${err.message}</p></body></html>`);
+  }
+  return res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
+});
+
 // Listen on port only when run directly (not under Vercel serverless functions)
-if (!process.env.VERCEL) {
+const isServerlessRuntime = !!(
+  process.env.VERCEL ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.NOW_REGION ||
+  process.env.VERCEL_ENV
+);
+
+if (!isServerlessRuntime) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Resume Rater app listening on http://0.0.0.0:${PORT}`);
   });

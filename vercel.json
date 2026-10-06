@@ -3,9 +3,13 @@
   "version": 2,
   "buildCommand": "npm run build",
   "functions": {
+    "api/index.js": {
+      "includeFiles": "{views/**,uploads/**,data/**,public/**,src/**,*.csv}",
+      "maxDuration": 30
+    },
     "api/*.js": {
-      "includeFiles": "views/**,uploads/**,data/**,public/**,src/**",
-      "maxDuration": 15
+      "includeFiles": "{views/**,uploads/**,data/**,public/**,src/**,*.csv}",
+      "maxDuration": 30
     }
   },
   "rewrites": [
