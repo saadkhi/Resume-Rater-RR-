@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume and Job Description Evaluator</title>
+    <meta name="description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts category, and rates match similarity against job descriptions.">
+    <meta property="og:title" content="Resume and Job Description Evaluator">
+    <meta property="og:description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts category, and rates match similarity against job descriptions.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-canvas: #f8fafc;
+            --surface-card: #ffffff;
+            --surface-subtle: #f1f5f9;
+            --border-hairline: #e2e8f0;
+            --border-focus: #3b82f6;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-primary: #2563eb;
+            --accent-primary-hover: #1d4ed8;
+            --accent-light: #eff6ff;
+            --status-success: #16a34a;
+            --status-amber: #d97706;
+            --status-error: #dc2626;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        /* Top Bar Contract: 3 zones */
+        .top-bar {
+            height: 64px;
+            background: var(--surface-card);
+            border-bottom: 1px solid var(--border-hairline);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .brand-wordmark {
+            font-size: 1.125rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .brand-wordmark svg {
+            color: var(--accent-primary);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+        }
+
+        .top-action-btn {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .top-action-btn:hover {
+            background: #1e293b;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem 5rem;
+        }
+
+        /* Hero Header */
+        .hero-section {
+            margin-bottom: 2rem;
+        }
+
+        .hero-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            text-wrap: balance;
+        }
+
+        .hero-subtitle {
+            font-size: 0.9375rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .hero-separator {
+            color: var(--border-hairline);
+        }
+
+        /* Grid Layout */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        /* Card Surface */
+        .surface-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-hairline);
+            border-radius: 12px;
+            padding: 1.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .card-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.875rem;
+            border-bottom: 1px solid var(--border-hairline);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .card-caption {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        /* Upload Component */
+        .dropzone-container {
+            border: 2px dashed var(--border-hairline);
+            border-radius: 10px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            background: var(--surface-subtle);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .dropzone-container:hover, .dropzone-container.drag-over {
+            border-color: var(--accent-primary);
+            background: var(--accent-light);
+        }
+
+        .dropzone-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--accent-primary);
+            margin: 0 auto 0.875rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dropzone-headline {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .dropzone-helper {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .browse-cta {
+            display: inline-block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            padding: 0.5rem 1.25rem;
+            border-radius: 6px;
+            pointer-events: none;
+            transition: all 0.15s ease;
+        }
+
+        .dropzone-container:hover .browse-cta {
+            border-color: var(--accent-primary);
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.08);
+        }
+
+        #resumeFileInput {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Selected File Card */
+        .selected-file-card {
+            display: none;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .selected-file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 0;
+        }
+
+        .file-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #dc2626;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-meta-text {
+            min-width: 0;
+        }
+
+        .file-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .file-action-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .btn-remove {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--status-error);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.35rem 0.65rem;
+            border-radius: 4px;
+        }
+
+        .btn-remove:hover {
+            background: #fee2e2;
+        }
+
+        /* Quick Samples Strip */
+        .samples-strip {
+            margin-top: 1.25rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+        }
+
+        .samples-label {
+            color: var(--text-muted);
+            margin-right: 0.25rem;
+        }
+
+        .sample-chip {
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-hairline);
+            color: var(--text-secondary);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .sample-chip:hover {
+            background: #ffffff;
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Optional Job Match Inputs */
+        .optional-jd-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-hairline);
+        }
+
+        .section-toggle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-toggle-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .section-toggle-chevron {
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .jd-fields-wrap {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
+        }
+
+        .input-select, .input-textarea {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .input-select:focus, .input-textarea:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        /* Submit Action Row */
+        .action-row {
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: #ffffff;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.625rem 1.5rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.15s ease;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-primary-hover);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Progress / Loading Bar */
+        .progress-container {
+            display: none;
+            margin-top: 1.25rem;
+            background: var(--surface-subtle);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border-hairline);
+        }
+
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar-track {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent-primary);
+            width: 30%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            animation: indeterminate 1.5s infinite linear;
+        }
+
+        @keyframes indeterminate {
+            0% { transform: translateX(-100%); width: 40%; }
+            50% { transform: translateX(50%); width: 60%; }
+            100% { transform: translateX(200%); width: 40%; }
+        }
+
+        /* Alert Banners */
+        .alert-box {
+            display: none;
+            padding: 0.875rem 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .alert-box.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .alert-box.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        /* Results Container */
+        .results-panel {
+            display: none;
+            margin-top: 2.5rem;
+        }
+
+        .results-panel.visible {
+            display: block;
+        }
+
+        /* Summary Header Banner */
+        .result-summary-card {
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 12px;
+            padding: 1.5rem 1.75rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .summary-role-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .summary-kicker {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .summary-role-title {
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .summary-metrics-row {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-val {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+
+        .metric-lbl {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Match Score Banner */
+        .match-badge-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1.25rem;
+            background: var(--surface-subtle);
+            border-radius: 8px;
+            border: 1px solid var(--border-hairline);
+        }
+
+        .match-rating-text {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .match-score-num {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .match-high { color: var(--status-success); }
+        .match-medium { color: var(--status-amber); }
+        .match-low { color: var(--text-secondary); }
+
+        /* Segmented View Controls */
+        .segmented-tabs {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem;
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: #ffffff;
+            color: var(--text-primary);
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Tab Panes */
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Sections Grid */
+        .sections-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+
+        .section-box {
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .section-box-header {
+            padding: 0.875rem 1.25rem;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border-hairline);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-box-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn-copy-section {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            padding: 0.25rem 0.625rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-copy-section:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+        }
+
+        .section-box-content {
+            padding: 1.25rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 280px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            background: #ffffff;
+        }
+
+        .section-box-content.empty {
+            color: var(--text-muted);
+            font-style: italic;
+            font-family: var(--font-sans);
+        }
+
+        /* Raw / Cleaned Text Viewer */
+        .text-viewer-card {
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .viewer-toolbar {
+            padding: 0.75rem 1.25rem;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border-hairline);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .viewer-code-pre {
+            padding: 1.25rem;
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            max-height: 480px;
+            overflow-y: auto;
+            line-height: 1.65;
+            background: #fcfdfe;
+        }
+
+        /* Live Match Evaluator Tab */
+        .matcher-box {
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+
+        .matcher-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .matcher-grid {
+                grid-template-columns: 1fr;
+            }
+            .result-summary-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .summary-metrics-row {
+                gap: 1.25rem;
+            }
+        }
+
+        .matcher-output-card {
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 4px solid var(--border-hairline);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin-bottom: 0.75rem;
+        }
+
+        .score-circle-num {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .score-circle-lbl {
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        /* Server-rendered static result fallback */
+        .static-result-wrap {
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar Contract -->
+    <header class="top-bar">
+        <!-- Zone 1: Brand Wordmark -->
+        <a href="/" class="brand-wordmark">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Resume Rater
+        </a>
+
+        <!-- Zone 2: Navigation Links -->
+        <nav class="nav-links">
+            <a href="#upload-section" class="nav-link">PDF Parser</a>
+            <a href="#sections-tab" class="nav-link">Section Extraction</a>
+            <a href="#matcher-tab" class="nav-link">Job Matcher</a>
+            <a href="/api/sample-resumes" target="_blank" class="nav-link">Sample API</a>
+        </nav>
+
+        <!-- Zone 3: Actions -->
+        <div>
+            <button type="button" class="top-action-btn" id="btnQuickSampleTop">Try Sample Resume</button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="main-container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="hero-title">Resume Parser & Evaluator</h1>
+            <div class="hero-subtitle">
+                <span>PDF Text Extraction</span>
+                <span class="hero-separator">·</span>
+                <span>Section Parsing</span>
+                <span class="hero-separator">·</span>
+                <span>TF-IDF Vectorization</span>
+                <span class="hero-separator">·</span>
+                <span>Domain Classification</span>
+            </div>
+        </div>
+
+        <!-- File Upload Card Component -->
+        <div class="workspace-grid">
+            <section class="surface-card" id="upload-section">
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title">Upload Resume Document</h2>
+                        <p class="card-caption">Select or drop a PDF file to extract text layers and analyze career sections</p>
+                    </div>
+                    <span class="file-size" id="uploadStatusBadge">Ready</span>
+                </div>
+
+                <!-- Interactive Dropzone -->
+                <div class="dropzone-container" id="dropzone">
+                    <input type="file" id="resumeFileInput" name="resume" accept=".pdf,application/pdf" aria-label="Upload PDF resume file">
+                    <div class="dropzone-icon">
+                        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                            <path d="M12 12v9"></path>
+                            <path d="m16 16-4-4-4 4"></path>
+                        </svg>
+                    </div>
+                    <p class="dropzone-headline">Drag & drop your PDF resume here, or browse files</p>
+                    <p class="dropzone-helper">Standard PDF files (.pdf) up to 15MB supported</p>
+                    <span class="browse-cta">Browse PDF Document</span>
+                </div>
+
+                <!-- Selected File Metadata Card -->
+                <div class="selected-file-card" id="selectedFileCard">
+                    <div class="selected-file-info">
+                        <div class="file-icon-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                            </svg>
+                        </div>
+                        <div class="file-meta-text">
+                            <p class="file-name" id="selectedFileName">filename.pdf</p>
+                            <p class="file-size" id="selectedFileSize">0 KB</p>
+                        </div>
+                    </div>
+                    <div class="file-action-group">
+                        <button type="button" class="btn-remove" id="btnRemoveFile">Change</button>
+                    </div>
+                </div>
+
+                <!-- Quick Samples Strip -->
+                <div class="samples-strip">
+                    <span class="samples-label">Quick test with sample:</span>
+                    <button type="button" class="sample-chip" data-sample="Saads_CV_Resume.pdf">Saad Ali (ML Engineer)</button>
+                    <button type="button" class="sample-chip" data-sample="resume1.pdf">Sample Resume 1</button>
+                    <button type="button" class="sample-chip" data-sample="resume2.pdf">Sample Resume 2</button>
+                    <button type="button" class="sample-chip" data-sample="Saad_Ali_ResumeCV_Old.pdf">Saad Ali (Old CV)</button>
+                </div>
+
+                <!-- Optional Target Job Description Accordion -->
+                <div class="optional-jd-section">
+                    <div class="section-toggle-header" id="jdToggleHeader">
+                        <span class="section-toggle-title">Optional: Evaluate Against Target Job Role or Description</span>
+                        <svg class="section-toggle-chevron" id="jdChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+
+                    <div class="jd-fields-wrap" id="jdFieldsWrap" style="display: none;">
+                        <div>
+                            <label class="input-label" for="jobKeywordsSelect">Select Standard Industry Role Keywords:</label>
+                            <select id="jobKeywordsSelect" class="input-select">
+                                <option value="">Choose preset role keywords...</option>
+                                <option value="Data Scientist, Machine Learning, Python, SQL, Statistics, Modeling">Data Scientist</option>
+                                <option value="Software Engineer, Java, C++, Algorithms, Data Structures, System Design">Software Engineer</option>
+                                <option value="Web Developer, HTML, CSS, JavaScript, React, Node.js">Web Developer</option>
+                                <option value="Python Developer, Django, Flask, MySQL, REST APIs, Automation">Python Developer</option>
+                                <option value="AI Engineer, Deep Learning, Neural Networks, TensorFlow, PyTorch">AI Engineer</option>
+                                <option value="Cloud Architect, AWS, Azure, Cloud Infrastructure, Docker, Kubernetes">Cloud Architect</option>
+                                <option value="DevOps Engineer, CI/CD, Docker, Kubernetes, AWS, Terraform">DevOps Engineer</option>
+                                <option value="Cybersecurity Analyst, Security, Penetration Testing, Risk Management">Cybersecurity Analyst</option>
+                                <option value="Mobile Developer, Android, iOS, Flutter, Swift, Kotlin">Mobile Developer</option>
+                                <option value="Project Manager, Agile, Scrum, Leadership, Roadmaps">Project Manager</option>
+                                <option value="Database Administrator, SQL, Oracle, Performance Tuning">Database Administrator</option>
+                                <option value="UI/UX Designer, Wireframing, Prototyping, User Research, Figma">UI/UX Designer</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="input-label" for="jobDescriptionTextarea">Or Paste Job Description Text:</label>
+                            <textarea id="jobDescriptionTextarea" class="input-textarea" rows="3" placeholder="Paste specific requirements, responsibilities, or skills..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button & Upload State -->
+                <div class="action-row">
+                    <button type="button" class="btn-primary" id="btnParseResume" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span id="btnParseText">Parse Resume Text</span>
+                    </button>
+                    <span class="file-size" id="parsingStatusMessage"></span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-header">
+                        <span id="progressStepText">Extracting PDF text layers...</span>
+                        <span class="file-size" id="progressPercent">Processing</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
+                </div>
+
+                <!-- Alert Message -->
+                <div class="alert-box" id="alertBox"></div>
+            </section>
+
+            <!-- Results Dashboard Panel -->
+            <section class="results-panel" id="resultsPanel">
+                <!-- Summary Card -->
+                <div class="result-summary-card">
+                    <div class="summary-role-col">
+                        <span class="summary-kicker">Predicted Career Category</span>
+                        <h3 class="summary-role-title" id="resCategory">Unknown</h3>
+                        <span class="card-caption" id="resFilename">Saads_CV_Resume.pdf</span>
+                    </div>
+
+                    <div class="summary-metrics-row">
+                        <div class="metric-item">
+                            <span class="metric-val" id="resPages">1</span>
+                            <span class="metric-lbl">Pages</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-val" id="resWords">0</span>
+                            <span class="metric-lbl">Words</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-val" id="resChars">0</span>
+                            <span class="metric-lbl">Characters</span>
+                        </div>
+                    </div>
+
+                    <div class="match-badge-container" id="matchBadgeContainer" style="display: none;">
+                        <div class="metric-item">
+                            <span class="metric-lbl">Match Rating</span>
+                            <span class="match-rating-text" id="resMatchRating">High Match</span>
+                        </div>
+                        <span class="match-score-num" id="resSimilarityScore">0.85</span>
+                    </div>
+                </div>
+
+                <!-- Segmented Tabs -->
+                <div class="segmented-tabs" role="tablist">
+                    <button type="button" class="tab-btn active" data-tab="tab-recharts">Match Visualization (Recharts)</button>
+                    <button type="button" class="tab-btn" data-tab="tab-sections">Extracted Sections</button>
+                    <button type="button" class="tab-btn" data-tab="tab-matcher">Job Match Evaluator</button>
+                    <button type="button" class="tab-btn" data-tab="tab-cleaned">Cleaned Text</button>
+                    <button type="button" class="tab-btn" data-tab="tab-raw">Raw PDF Text</button>
+                </div>
+
+                <!-- Tab 0: Recharts Visualization Component -->
+                <div class="tab-pane active" id="tab-recharts">
+                    <div id="recharts-match-container"></div>
+                </div>
+
+                <!-- Tab 1: Extracted Sections -->
+                <div class="tab-pane" id="tab-sections">
+                    <div class="sections-grid">
+                        <!-- Education -->
+                        <div class="section-box">
+                            <div class="section-box-header">
+                                <span class="section-box-name">Education</span>
+                                <button type="button" class="btn-copy-section" data-target="sec-education">Copy Section</button>
+                            </div>
+                            <div class="section-box-content" id="sec-education">No education section detected.</div>
+                        </div>
+
+                        <!-- Work Experience -->
+                        <div class="section-box">
+                            <div class="section-box-header">
+                                <span class="section-box-name">Work Experience</span>
+                                <button type="button" class="btn-copy-section" data-target="sec-experience">Copy Section</button>
+                            </div>
+                            <div class="section-box-content" id="sec-experience">No experience section detected.</div>
+                        </div>
+
+                        <!-- Skills -->
+                        <div class="section-box">
+                            <div class="section-box-header">
+                                <span class="section-box-name">Technical Skills</span>
+                                <button type="button" class="btn-copy-section" data-target="sec-skills">Copy Section</button>
+                            </div>
+                            <div class="section-box-content" id="sec-skills">No skills section detected.</div>
+                        </div>
+
+                        <!-- Projects -->
+                        <div class="section-box">
+                            <div class="section-box-header">
+                                <span class="section-box-name">Projects & Systems</span>
+                                <button type="button" class="btn-copy-section" data-target="sec-projects">Copy Section</button>
+                            </div>
+                            <div class="section-box-content" id="sec-projects">No projects section detected.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Cleaned Text -->
+                <div class="tab-pane" id="tab-cleaned">
+                    <div class="text-viewer-card">
+                        <div class="viewer-toolbar">
+                            <span class="card-caption">Preprocessed tokenized text used for TF-IDF vectorization & classification</span>
+                            <button type="button" class="btn-copy-section" id="btnCopyCleaned">Copy Cleaned Text</button>
+                        </div>
+                        <pre class="viewer-code-pre" id="cleanedTextPre"></pre>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Raw PDF Text -->
+                <div class="tab-pane" id="tab-raw">
+                    <div class="text-viewer-card">
+                        <div class="viewer-toolbar">
+                            <span class="card-caption">Exact raw text extracted from PDF stream layers</span>
+                            <button type="button" class="btn-copy-section" id="btnCopyRaw">Copy Raw Text</button>
+                        </div>
+                        <pre class="viewer-code-pre" id="rawTextPre"></pre>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Interactive Match Evaluator -->
+                <div class="tab-pane" id="tab-matcher">
+                    <div class="matcher-box">
+                        <h4 class="card-title">Real-Time Job Similarity Evaluation</h4>
+                        <p class="card-caption">Test this parsed resume against custom job descriptions or preset specifications to compute live TF-IDF cosine similarity.</p>
+                        
+                        <div class="matcher-grid">
+                            <div>
+                                <label class="input-label" for="liveJdPreset">Quick Role Keyword Presets:</label>
+                                <select id="liveJdPreset" class="input-select" style="margin-bottom: 0.75rem;">
+                                    <option value="">Select industry role...</option>
+                                    <option value="Data Scientist, Machine Learning, Python, SQL, Statistics, Modeling, Deep Learning">Data Scientist</option>
+                                    <option value="Machine Learning Engineer, PyTorch, TensorFlow, Computer Vision, SNN, Model Deployment">Machine Learning Engineer</option>
+                                    <option value="Python Developer, Django, Flask, MySQL, REST API, Microservices">Python Developer</option>
+                                    <option value="Frontend Developer, React, JavaScript, HTML, CSS, TypeScript, UI/UX">Frontend Developer</option>
+                                    <option value="Backend Developer, Node.js, Express, MongoDB, PostgreSQL, Microservices">Backend Developer</option>
+                                    <option value="Full Stack Developer, React, Node.js, Python, MongoDB, SQL, Git">Full Stack Developer</option>
+                                    <option value="Cloud Engineer, AWS, Azure, Docker, Kubernetes, CI/CD, Terraform">Cloud Engineer</option>
+                                    <option value="Cybersecurity Analyst, Security, Penetration Testing, Risk Management, Malware">Cybersecurity Analyst</option>
+                                </select>
+
+                                <label class="input-label" for="liveJdInput">Job Description Text:</label>
+                                <textarea id="liveJdInput" class="input-textarea" rows="6" placeholder="Paste target job responsibilities, skills, or job posting content here..."></textarea>
+                                
+                                <div style="margin-top: 0.75rem;">
+                                    <button type="button" class="btn-primary" id="btnComputeLiveMatch">Evaluate Match</button>
+                                </div>
+                            </div>
+
+                            <div class="matcher-output-card">
+                                <div class="score-circle">
+                                    <span class="score-circle-num" id="liveScoreNum">0.00</span>
+                                    <span class="score-circle-lbl">SIMILARITY</span>
+                                </div>
+                                <h4 class="match-rating-text" id="liveRatingText">Awaiting evaluation</h4>
+                                <p class="card-caption" id="liveMatchDesc" style="margin-top: 0.5rem;">Select a preset or enter job requirements to compute cosine similarity against this resume's TF-IDF vector.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Server-side fallback rendering for legacy POST /upload -->
+        <% if (locals.error) { %>
+            <div class="static-result-wrap">
+                <div class="alert-box error" style="display: block;">
+                    <%= error %>
+                </div>
+            </div>
+        <% } %>
+
+        <% if (locals.prediction_category && locals.resume_match_rating && locals.numerical_similarity_score !== undefined && locals.numerical_similarity_score !== null) { %>
+            <div class="static-result-wrap">
+                <div class="result-summary-card">
+                    <div class="summary-role-col">
+                        <span class="summary-kicker">Server-Processed Evaluation</span>
+                        <h3 class="summary-role-title"><%= prediction_category %></h3>
+                    </div>
+                    <div class="match-badge-container">
+                        <div class="metric-item">
+                            <span class="metric-lbl">Match Rating</span>
+                            <span class="match-rating-text"><%= resume_match_rating %></span>
+                        </div>
+                        <span class="match-score-num"><%= numerical_similarity_score %></span>
+                    </div>
+                </div>
+
+                <% if (locals.csv_data && locals.csv_data.length) { %>
+                    <div class="sections-grid">
+                        <% csv_data.forEach(function(section) { %>
+                            <div class="section-box">
+                                <div class="section-box-header">
+                                    <span class="section-box-name"><%= section.Section %></span>
+                                </div>
+                                <div class="section-box-content"><%= section.Content %></div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } %>
+            </div>
+        <% } %>
+    </main>
+
+    <!-- Recharts Match Visualizer Bundle -->
+    <script src="/match-visualizer.bundle.js"></script>
+
+    <!-- Client-side File Upload Component & Integration Script -->
+    <script>
+        (function() {
+            // Elements
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('resumeFileInput');
+            const selectedFileCard = document.getElementById('selectedFileCard');
+            const selectedFileName = document.getElementById('selectedFileName');
+            const selectedFileSize = document.getElementById('selectedFileSize');
+            const btnRemoveFile = document.getElementById('btnRemoveFile');
+            const btnParseResume = document.getElementById('btnParseResume');
+            const btnParseText = document.getElementById('btnParseText');
+            const uploadStatusBadge = document.getElementById('uploadStatusBadge');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressStepText = document.getElementById('progressStepText');
+            const alertBox = document.getElementById('alertBox');
+            const resultsPanel = document.getElementById('resultsPanel');
+            const btnQuickSampleTop = document.getElementById('btnQuickSampleTop');
+
+            // Accordion JD toggle
+            const jdToggleHeader = document.getElementById('jdToggleHeader');
+            const jdFieldsWrap = document.getElementById('jdFieldsWrap');
+            const jdChevron = document.getElementById('jdChevron');
+            const jobKeywordsSelect = document.getElementById('jobKeywordsSelect');
+            const jobDescriptionTextarea = document.getElementById('jobDescriptionTextarea');
+
+            // Result elements
+            const resCategory = document.getElementById('resCategory');
+            const resFilename = document.getElementById('resFilename');
+            const resPages = document.getElementById('resPages');
+            const resWords = document.getElementById('resWords');
+            const resChars = document.getElementById('resChars');
+            const matchBadgeContainer = document.getElementById('matchBadgeContainer');
+            const resMatchRating = document.getElementById('resMatchRating');
+            const resSimilarityScore = document.getElementById('resSimilarityScore');
+
+            const secEducation = document.getElementById('sec-education');
+            const secExperience = document.getElementById('sec-experience');
+            const secSkills = document.getElementById('sec-skills');
+            const secProjects = document.getElementById('sec-projects');
+            const cleanedTextPre = document.getElementById('cleanedTextPre');
+            const rawTextPre = document.getElementById('rawTextPre');
+
+            // Live matcher elements
+            const liveJdPreset = document.getElementById('liveJdPreset');
+            const liveJdInput = document.getElementById('liveJdInput');
+            const btnComputeLiveMatch = document.getElementById('btnComputeLiveMatch');
+            const liveScoreNum = document.getElementById('liveScoreNum');
+            const liveRatingText = document.getElementById('liveRatingText');
+            const liveMatchDesc = document.getElementById('liveMatchDesc');
+
+            let currentFile = null;
+            let currentParsedData = null;
+
+            // Format helper
+            function formatBytes(bytes) {
+                if (!bytes || bytes === 0) return '0 KB';
+                const k = 1024;
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+
+            function showAlert(msg, isError = true) {
+                alertBox.textContent = msg;
+                alertBox.className = 'alert-box ' + (isError ? 'error' : 'success');
+                alertBox.style.display = 'block';
+            }
+
+            function clearAlert() {
+                alertBox.textContent = '';
+                alertBox.style.display = 'none';
+            }
+
+            // Accordion toggle
+            jdToggleHeader.addEventListener('click', () => {
+                const isOpen = jdFieldsWrap.style.display !== 'none';
+                jdFieldsWrap.style.display = isOpen ? 'none' : 'grid';
+                jdChevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            });
+
+            // Handle file selection
+            function handleFile(file) {
+                clearAlert();
+                if (!file) return;
+
+                if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+                    showAlert('Only PDF files (.pdf) are supported. Please select a valid resume document.');
+                    resetFileInput();
+                    return;
+                }
+
+                // 15MB size limit
+                if (file.size > 15 * 1024 * 1024) {
+                    showAlert('File size exceeds the 15MB limit. Please upload a smaller document.');
+                    resetFileInput();
+                    return;
+                }
+
+                currentFile = file;
+                selectedFileName.textContent = file.name;
+                selectedFileSize.textContent = formatBytes(file.size);
+                selectedFileCard.style.display = 'flex';
+                dropzone.style.display = 'none';
+                btnParseResume.disabled = false;
+                uploadStatusBadge.textContent = 'File Ready';
+            }
+
+            function resetFileInput() {
+                currentFile = null;
+                fileInput.value = '';
+                selectedFileCard.style.display = 'none';
+                dropzone.style.display = 'block';
+                btnParseResume.disabled = true;
+                uploadStatusBadge.textContent = 'Ready';
+            }
+
+            btnRemoveFile.addEventListener('click', resetFileInput);
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+
+            // Drag and drop listeners
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('drag-over');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('drag-over');
+                }, false);
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files[0]) {
+                    handleFile(dt.files[0]);
+                }
+            });
+
+            // Parse File via API
+            async function uploadAndParseResume() {
+                if (!currentFile) return;
+
+                clearAlert();
+                setLoadingState(true, 'Uploading PDF & extracting text layers...');
+
+                try {
+                    const formData = new FormData();
+                    formData.append('resume', currentFile);
+
+                    const jdText = jobDescriptionTextarea.value.trim();
+                    const jdKeywords = jobKeywordsSelect.value;
+                    if (jdText) formData.append('job_description_text', jdText);
+                    if (jdKeywords) formData.append('job_keywords', jdKeywords);
+
+                    const res = await fetch('/api/parse-resume', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.error || 'Failed to parse resume document.');
+                    }
+
+                    renderParsedResults(data);
+                } catch (err) {
+                    console.error('Parse error:', err);
+                    showAlert(err.message);
+                } finally {
+                    setLoadingState(false);
+                }
+            }
+
+            btnParseResume.addEventListener('click', uploadAndParseResume);
+
+            // Quick Samples Click Handlers
+            document.querySelectorAll('.sample-chip').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const sampleName = btn.getAttribute('data-sample');
+                    parseSampleFile(sampleName);
+                });
+            });
+
+            btnQuickSampleTop.addEventListener('click', () => {
+                parseSampleFile('Saads_CV_Resume.pdf');
+            });
+
+            async function parseSampleFile(sampleName) {
+                clearAlert();
+                setLoadingState(true, `Loading & parsing sample (${sampleName})...`);
+
+                try {
+                    const jdText = jobDescriptionTextarea.value.trim();
+                    const jdKeywords = jobKeywordsSelect.value;
+
+                    const res = await fetch('/api/parse-sample', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            sampleName,
+                            job_description_text: jdText,
+                            job_keywords: jdKeywords
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.error || 'Failed to parse sample file.');
+                    }
+
+                    renderParsedResults(data);
+                } catch (err) {
+                    console.error('Sample parse error:', err);
+                    showAlert(err.message);
+                } finally {
+                    setLoadingState(false);
+                }
+            }
+
+            function setLoadingState(loading, text = 'Processing...') {
+                if (loading) {
+                    btnParseResume.disabled = true;
+                    btnParseText.textContent = 'Parsing...';
+                    progressContainer.style.display = 'block';
+                    progressStepText.textContent = text;
+                    uploadStatusBadge.textContent = 'Analyzing';
+                } else {
+                    btnParseResume.disabled = !currentFile;
+                    btnParseText.textContent = 'Parse Resume Text';
+                    progressContainer.style.display = 'none';
+                    uploadStatusBadge.textContent = 'Ready';
+                }
+            }
+
+            // Render Results into UI
+            function renderParsedResults(data) {
+                currentParsedData = data;
+
+                // Summary
+                resCategory.textContent = data.category || 'Unknown';
+                resFilename.textContent = data.filename || 'Parsed Document';
+                resPages.textContent = data.stats?.pageCount || data.pages || 1;
+                resWords.textContent = (data.stats?.wordCount || 0).toLocaleString();
+                resChars.textContent = (data.stats?.characterCount || 0).toLocaleString();
+
+                // Match details if present
+                if (data.match) {
+                    matchBadgeContainer.style.display = 'flex';
+                    resMatchRating.textContent = data.match.matchRating;
+                    resSimilarityScore.textContent = data.match.similarityScore.toFixed(2);
+                    
+                    const ratingCls = data.match.matchRating.includes('High') ? 'match-high' :
+                                      data.match.matchRating.includes('Medium') ? 'match-medium' : 'match-low';
+                    resMatchRating.className = 'match-rating-text ' + ratingCls;
+                } else {
+                    matchBadgeContainer.style.display = 'none';
+                }
+
+                // Extracted Sections
+                const sections = data.sections || {};
+                renderSectionBox(secEducation, sections.Education, 'Education');
+                renderSectionBox(secExperience, sections.Experience, 'Experience');
+                renderSectionBox(secSkills, sections.Skills, 'Skills');
+                renderSectionBox(secProjects, sections.Projects, 'Projects');
+
+                // Cleaned & Raw text
+                cleanedTextPre.textContent = data.cleanedText || 'No cleaned text available.';
+                rawTextPre.textContent = data.rawText || 'No raw text available.';
+
+                // Mount Recharts Match Visualizer Component
+                if (window.renderMatchVisualizer) {
+                    if (data.match) {
+                        window.renderMatchVisualizer('recharts-match-container', data);
+                    } else {
+                        // Generate initial baseline match against the predicted category profile
+                        const benchmarkJd = data.category ? `${data.category} Core Skills, Domain Competencies, Industry Standards` : 'Software Engineering, Algorithms, Systems';
+                        fetch('/api/evaluate-match', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                resumeText: data.rawText,
+                                jobDescriptionText: benchmarkJd,
+                                resumeSections: data.sections
+                            })
+                        }).then(r => r.json()).then(matchRes => {
+                            if (matchRes && matchRes.success) {
+                                data.match = {
+                                    ...matchRes,
+                                    targetJob: `${data.category || 'Domain'} Benchmark Profile`
+                                };
+                                window.renderMatchVisualizer('recharts-match-container', data);
+                            }
+                        }).catch(err => {
+                            console.warn('Initial Recharts baseline failed:', err);
+                        });
+                    }
+                }
+
+                // Show results panel with smooth scroll
+                resultsPanel.className = 'results-panel visible';
+                resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            function renderSectionBox(el, content, fallbackName) {
+                if (!content || content.toLowerCase().includes('not found')) {
+                    el.textContent = `${fallbackName} section not explicitly detected in this PDF.`;
+                    el.classList.add('empty');
+                } else {
+                    el.textContent = content;
+                    el.classList.remove('empty');
+                }
+            }
+
+            // Tab Navigation
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-tab');
+
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+                    btn.classList.add('active');
+                    const pane = document.getElementById(targetId);
+                    if (pane) pane.classList.add('active');
+                });
+            });
+
+            // Copy to Clipboard buttons
+            document.querySelectorAll('.btn-copy-section').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+                    let textToCopy = '';
+                    if (targetId) {
+                        const targetEl = document.getElementById(targetId);
+                        textToCopy = targetEl ? targetEl.textContent : '';
+                    } else if (btn.id === 'btnCopyCleaned') {
+                        textToCopy = cleanedTextPre.textContent;
+                    } else if (btn.id === 'btnCopyRaw') {
+                        textToCopy = rawTextPre.textContent;
+                    }
+
+                    if (textToCopy) {
+                        navigator.clipboard.writeText(textToCopy).then(() => {
+                            const original = btn.textContent;
+                            btn.textContent = 'Copied!';
+                            setTimeout(() => { btn.textContent = original; }, 1500);
+                        }).catch(err => {
+                            console.error('Clipboard copy failed:', err);
+                        });
+                    }
+                });
+            });
+
+            // Live Match Evaluator
+            liveJdPreset.addEventListener('change', () => {
+                if (liveJdPreset.value) {
+                    liveJdInput.value = liveJdPreset.value;
+                }
+            });
+
+            btnComputeLiveMatch.addEventListener('click', async () => {
+                if (!currentParsedData || !currentParsedData.rawText) {
+                    showAlert('Please parse a resume PDF first.');
+                    return;
+                }
+
+                const jd = liveJdInput.value.trim();
+                if (!jd) {
+                    showAlert('Please enter job description text or select a role preset.');
+                    return;
+                }
+
+                btnComputeLiveMatch.disabled = true;
+                btnComputeLiveMatch.textContent = 'Computing...';
+
+                try {
+                    const res = await fetch('/api/evaluate-match', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            resumeText: currentParsedData.rawText,
+                            jobDescriptionText: jd,
+                            resumeSections: currentParsedData.sections
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.error || 'Evaluation failed.');
+                    }
+
+                    liveScoreNum.textContent = data.similarityScore.toFixed(2);
+                    liveRatingText.textContent = data.matchRating;
+                    const ratingCls = data.matchRating.includes('High') ? 'match-high' :
+                                      data.matchRating.includes('Medium') ? 'match-amber' : 'match-low';
+                    liveRatingText.className = 'match-rating-text ' + ratingCls;
+                    liveMatchDesc.textContent = `Match percentage: ${data.percentage}%. Recharts visualizations updated.`;
+
+                    // Update top summary badge
+                    matchBadgeContainer.style.display = 'flex';
+                    resMatchRating.textContent = data.matchRating;
+                    resSimilarityScore.textContent = data.similarityScore.toFixed(2);
+                    resMatchRating.className = 'match-rating-text ' + (data.matchRating.includes('High') ? 'match-high' : data.matchRating.includes('Medium') ? 'match-medium' : 'match-low');
+
+                    // Update Recharts component
+                    currentParsedData.match = {
+                        ...data,
+                        targetJob: jd.length > 50 ? jd.substring(0, 50) + '...' : jd
+                    };
+                    if (window.renderMatchVisualizer) {
+                        window.renderMatchVisualizer('recharts-match-container', currentParsedData);
+                    }
+
+                    // Automatically switch to Recharts tab so user sees the updated visualization
+                    const rechartsTabBtn = document.querySelector('[data-tab="tab-recharts"]');
+                    if (rechartsTabBtn) {
+                        rechartsTabBtn.click();
+                    }
+                } catch (err) {
+                    showAlert(err.message);
+                } finally {
+                    btnComputeLiveMatch.disabled = false;
+                    btnComputeLiveMatch.textContent = 'Evaluate Match';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
