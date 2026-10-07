@@ -11,13 +11,14 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Subscriptions Table (Stripe Billing Engine)
+-- Subscriptions Table (Paddle Billing Engine)
 CREATE TABLE IF NOT EXISTS subscriptions (
   id VARCHAR(64) PRIMARY KEY,
   user_id VARCHAR(64) REFERENCES users(id) ON DELETE CASCADE,
-  stripe_customer_id VARCHAR(100) UNIQUE NOT NULL,
-  stripe_subscription_id VARCHAR(100) UNIQUE,
-  stripe_price_id VARCHAR(100),
+  paddle_customer_id VARCHAR(100),
+  paddle_subscription_id VARCHAR(100) UNIQUE,
+  paddle_price_id VARCHAR(100),
+  paddle_transaction_id VARCHAR(100),
   plan_tier VARCHAR(50) DEFAULT 'pro', -- 'pro_monthly', 'pro_annual'
   status VARCHAR(50) NOT NULL DEFAULT 'inactive', -- 'active', 'past_due', 'canceled', 'trialing'
   current_period_end TIMESTAMP WITH TIME ZONE,
@@ -66,12 +67,33 @@ CREATE TABLE IF NOT EXISTS evaluations (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Stripe Webhook Events Audit Log
+-- Paddle Webhook Events Audit Log
 CREATE TABLE IF NOT EXISTS webhook_events (
   id VARCHAR(100) PRIMARY KEY,
   event_type VARCHAR(100) NOT NULL,
   payload JSONB NOT NULL,
   status VARCHAR(50) DEFAULT 'processed',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Job Opportunities & Real-time ATS Matching Table
+CREATE TABLE IF NOT EXISTS jobs (
+  id VARCHAR(64) PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  company VARCHAR(255) NOT NULL,
+  company_initial VARCHAR(5) NOT NULL,
+  location VARCHAR(255) NOT NULL,
+  remote BOOLEAN DEFAULT FALSE,
+  remote_text VARCHAR(100),
+  category VARCHAR(100) NOT NULL,
+  employment_type VARCHAR(50) DEFAULT 'Full-time',
+  salary VARCHAR(100),
+  experience_level VARCHAR(100),
+  posted_at VARCHAR(50),
+  source VARCHAR(100) DEFAULT 'JobDataLake API',
+  apply_url VARCHAR(500),
+  skills JSONB NOT NULL,
+  description TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -81,3 +103,4 @@ CREATE INDEX IF NOT EXISTS idx_usage_user_month ON user_usage(user_id, month_yea
 CREATE INDEX IF NOT EXISTS idx_resumes_user ON resumes(user_id);
 CREATE INDEX IF NOT EXISTS idx_evaluations_user ON evaluations(user_id);
 CREATE INDEX IF NOT EXISTS idx_webhook_events_type ON webhook_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_jobs_category_remote ON jobs(category, remote);

@@ -8,6 +8,7 @@
     "build": "esbuild src/MatchVisualizer.jsx --bundle --minify --format=iife --outfile=public/match-visualizer.bundle.js"
   },
   "dependencies": {
+    "@paddle/paddle-node-sdk": "^3.10.0",
     "ejs": "^7.0.1",
     "esbuild": "^0.28.2",
     "express": "^5.2.1",

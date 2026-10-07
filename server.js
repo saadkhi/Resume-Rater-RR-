@@ -70,17 +70,20 @@ const upload = multer({
   }
 });
 
-// Stripe Webhook Endpoint (Requires raw JSON buffer for signature verification)
-app.post('/api/webhooks/stripe', express.raw({ type: 'application/json', limit: '2mb' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
+// Paddle Webhook Endpoint (Requires raw JSON buffer for signature verification)
+const handleWebhookRequest = async (req, res) => {
+  const sig = req.headers['paddle-signature'] || req.headers['stripe-signature'];
   try {
     const result = await billingService.handleWebhook(req.body, sig);
     res.json(result);
   } catch (err) {
-    console.error('Stripe webhook error:', err.message);
+    console.error('Paddle webhook error:', err.message);
     res.status(400).json({ error: getSafeErrorMessage(err, 'Webhook verification failed.') });
   }
-});
+};
+app.post('/api/webhooks/paddle', express.raw({ type: 'application/json', limit: '2mb' }), handleWebhookRequest);
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json', limit: '2mb' }), handleWebhookRequest);
+app.post('/api/webhooks', express.raw({ type: 'application/json', limit: '2mb' }), handleWebhookRequest);
 
 app.set('view engine', 'ejs');
 const candidateViewsDirs = [
@@ -761,7 +764,7 @@ const handleJobsRequest = async (req, res) => {
 app.get('/api/jobs', apiLimiter, handleJobsRequest);
 app.post('/api/jobs', apiLimiter, handleJobsRequest);
 
-// 6. API: Create Stripe Checkout Session ($5/mo or $39/yr)
+// 6. API: Create Paddle Checkout Session ($5/mo or $39/yr)
 app.post('/api/create-checkout-session', billingLimiter, async (req, res) => {
   try {
     const userId = req.headers['x-user-id'] || 'usr_demo_001';
@@ -831,7 +834,7 @@ app.post('/api/test/toggle-pro', (req, res) => {
     if (sub) {
       db.subscriptions.upsert({
         userId,
-        stripeCustomerId: `cus_demo_${userId}`,
+        paddleCustomerId: `ctm_demo_${userId}`,
         status: 'inactive',
         planTier: 'free',
         currentPeriodEnd: null
@@ -840,12 +843,13 @@ app.post('/api/test/toggle-pro', (req, res) => {
     } else {
       db.subscriptions.upsert({
         userId,
-        stripeCustomerId: `cus_demo_${userId}`,
+        paddleCustomerId: `ctm_demo_${userId}`,
+        paddleSubscriptionId: `sub_demo_${Date.now()}`,
         status: 'active',
         planTier: 'pro_monthly',
         currentPeriodEnd: oneMonthFromNow.toISOString()
       });
-      res.json({ success: true, isPro: true, message: 'Activated Pro tier subscription ($5/month simulated).' });
+      res.json({ success: true, isPro: true, message: 'Activated Pro tier subscription ($5/month simulated with Paddle).' });
     }
   } catch (err) {
     res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
@@ -871,7 +875,7 @@ app.post('/api/test/simulate-limit-reached', (req, res) => {
     const currentMonth = new Date().toISOString().slice(0, 7);
     db.subscriptions.upsert({
       userId,
-      stripeCustomerId: `cus_demo_${userId}`,
+      paddleCustomerId: `ctm_demo_${userId}`,
       status: 'inactive',
       planTier: 'free',
       currentPeriodEnd: null
@@ -883,45 +887,59 @@ app.post('/api/test/simulate-limit-reached', (req, res) => {
   }
 });
 
-// 12. API: Dev/Test Simulate Stripe Webhook Event
+// 12. API: Dev/Test Simulate Paddle Webhook Event
 app.post('/api/test/simulate-webhook', async (req, res) => {
   try {
-    const { eventType, userId = 'usr_demo_001', plan = 'monthly' } = req.body || {};
+    const { eventType = 'transaction.completed', userId = 'usr_demo_001', plan = 'monthly' } = req.body || {};
     let mockPayload;
+    const sub = db.subscriptions.findByUserId(userId);
+    const customerId = sub?.paddleCustomerId || `ctm_sim_${userId}`;
+    const subId = sub?.paddleSubscriptionId || `sub_sim_${Date.now()}`;
 
-    if (eventType === 'checkout.session.completed') {
+    if (eventType === 'transaction.completed' || eventType === 'checkout.session.completed' || eventType === 'transaction.paid') {
       mockPayload = {
-        id: `evt_sim_${Date.now()}`,
-        type: 'checkout.session.completed',
+        eventId: `evt_sim_${Date.now()}`,
+        eventType: 'transaction.completed',
         data: {
-          object: {
-            client_reference_id: userId,
-            customer: `cus_sim_${userId}`,
-            subscription: `sub_sim_${Date.now()}`,
-            metadata: { userId, planType: plan }
-          }
+          id: `txn_sim_${Date.now()}`,
+          customerId,
+          subscriptionId: subId,
+          customData: { userId, planType: plan },
+          details: { totals: { total: plan === 'annual' ? '3900' : '500' } }
         }
       };
-    } else if (eventType === 'customer.subscription.deleted') {
-      const sub = db.subscriptions.findByUserId(userId);
+    } else if (eventType === 'subscription.activated' || eventType === 'subscription.created') {
+      const expires = new Date();
+      expires.setMonth(expires.getMonth() + 1);
       mockPayload = {
-        id: `evt_sim_${Date.now()}`,
-        type: 'customer.subscription.deleted',
+        eventId: `evt_sim_${Date.now()}`,
+        eventType: 'subscription.activated',
         data: {
-          object: {
-            customer: sub?.stripeCustomerId || `cus_sim_${userId}`
-          }
+          id: subId,
+          customerId,
+          status: 'active',
+          currentBillingPeriod: { endsAt: expires.toISOString() },
+          customData: { userId, planType: plan }
         }
       };
-    } else if (eventType === 'invoice.payment_failed') {
-      const sub = db.subscriptions.findByUserId(userId);
+    } else if (eventType === 'subscription.canceled' || eventType === 'customer.subscription.deleted') {
       mockPayload = {
-        id: `evt_sim_${Date.now()}`,
-        type: 'invoice.payment_failed',
+        eventId: `evt_sim_${Date.now()}`,
+        eventType: 'subscription.canceled',
         data: {
-          object: {
-            customer: sub?.stripeCustomerId || `cus_sim_${userId}`
-          }
+          id: subId,
+          customerId,
+          status: 'canceled'
+        }
+      };
+    } else if (eventType === 'subscription.past_due' || eventType === 'invoice.payment_failed') {
+      mockPayload = {
+        eventId: `evt_sim_${Date.now()}`,
+        eventType: 'subscription.past_due',
+        data: {
+          id: subId,
+          customerId,
+          status: 'past_due'
         }
       };
     } else {
@@ -929,7 +947,7 @@ app.post('/api/test/simulate-webhook', async (req, res) => {
     }
 
     const result = await billingService.handleWebhook(mockPayload, null);
-    res.json({ success: true, simulatedEvent: mockPayload.type, result });
+    res.json({ success: true, simulatedEvent: mockPayload.eventType, result });
   } catch (err) {
     res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
   }
@@ -1152,5 +1170,5 @@ if (!isServerlessRuntime) {
   });
 }
 
-export { app };
+export { app, computeTfidfVector, rateResumeSimilarity };
 export default app;

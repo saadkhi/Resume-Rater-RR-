@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { INITIAL_JOBS_DATASET } from './jobs-data.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,9 +30,10 @@ const initialDbState = {
     {
       id: 'sub_demo_001',
       userId: 'usr_demo_001',
-      stripeCustomerId: 'cus_demo_001',
-      stripeSubscriptionId: null,
-      stripePriceId: null,
+      paddleCustomerId: 'ctm_demo_001',
+      paddleSubscriptionId: null,
+      paddlePriceId: null,
+      paddleTransactionId: null,
       planTier: 'free',
       status: 'inactive',
       currentPeriodEnd: null,
@@ -51,7 +53,8 @@ const initialDbState = {
   ],
   resumes: [],
   evaluations: [],
-  webhook_events: []
+  webhook_events: [],
+  jobs: [...INITIAL_JOBS_DATASET]
 };
 
 function ensureDbFile() {
@@ -85,6 +88,7 @@ function loadDb() {
     try {
       const raw = fs.readFileSync(writableDbPath, 'utf8');
       inMemoryDbState = JSON.parse(raw);
+      ensureJobsSeeded(inMemoryDbState);
       return inMemoryDbState;
     } catch (err) {
       console.warn('Notice: Could not parse writable DB, falling back:', err.message);
@@ -96,6 +100,7 @@ function loadDb() {
     try {
       const raw = fs.readFileSync(bundledDbPath, 'utf8');
       inMemoryDbState = JSON.parse(raw);
+      ensureJobsSeeded(inMemoryDbState);
       saveDb(inMemoryDbState);
       return inMemoryDbState;
     } catch (err) {
@@ -105,8 +110,23 @@ function loadDb() {
 
   // Fallback to initialDbState
   inMemoryDbState = JSON.parse(JSON.stringify(initialDbState));
+  ensureJobsSeeded(inMemoryDbState);
   saveDb(inMemoryDbState);
   return inMemoryDbState;
+}
+
+function ensureJobsSeeded(state) {
+  if (!state) return;
+  if (!Array.isArray(state.jobs) || state.jobs.length < INITIAL_JOBS_DATASET.length) {
+    const existingJobIds = new Set((state.jobs || []).map(j => j.id));
+    const merged = Array.isArray(state.jobs) ? [...state.jobs] : [];
+    for (const job of INITIAL_JOBS_DATASET) {
+      if (!existingJobIds.has(job.id)) {
+        merged.push(job);
+      }
+    }
+    state.jobs = merged;
+  }
 }
 
 function saveDb(data) {
@@ -170,30 +190,43 @@ export const db = {
       }
       return null;
     },
-    findByStripeCustomerId(customerId) {
+    findByPaddleCustomerId(customerId) {
       const state = loadDb();
-      return state.subscriptions.find(s => s.stripeCustomerId === customerId) || null;
+      return state.subscriptions.find(s => s.paddleCustomerId === customerId || s.stripeCustomerId === customerId) || null;
+    },
+    findByPaddleSubId(subId) {
+      const state = loadDb();
+      return state.subscriptions.find(s => s.paddleSubscriptionId === subId || s.stripeSubscriptionId === subId) || null;
+    },
+    findByStripeCustomerId(customerId) {
+      return this.findByPaddleCustomerId(customerId);
     },
     findByStripeSubId(subId) {
-      const state = loadDb();
-      return state.subscriptions.find(s => s.stripeSubscriptionId === subId) || null;
+      return this.findByPaddleSubId(subId);
     },
     upsert(subData) {
       const state = loadDb();
       const existingIdx = state.subscriptions.findIndex(
-        s => s.userId === subData.userId || s.stripeCustomerId === subData.stripeCustomerId
+        s => s.userId === subData.userId || 
+             (subData.paddleCustomerId && s.paddleCustomerId === subData.paddleCustomerId) ||
+             (subData.stripeCustomerId && s.stripeCustomerId === subData.stripeCustomerId) ||
+             (subData.paddleSubscriptionId && s.paddleSubscriptionId === subData.paddleSubscriptionId)
       );
 
       const record = {
         id: existingIdx >= 0 ? state.subscriptions[existingIdx].id : `sub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         userId: subData.userId,
-        stripeCustomerId: subData.stripeCustomerId,
-        stripeSubscriptionId: subData.stripeSubscriptionId || null,
-        stripePriceId: subData.stripePriceId || null,
-        planTier: subData.planTier || 'pro',
-        status: subData.status || 'inactive',
-        currentPeriodEnd: subData.currentPeriodEnd || null,
-        cancelAtPeriodEnd: subData.cancelAtPeriodEnd || false,
+        paddleCustomerId: subData.paddleCustomerId || subData.stripeCustomerId || (existingIdx >= 0 ? state.subscriptions[existingIdx].paddleCustomerId : null),
+        paddleSubscriptionId: subData.paddleSubscriptionId || subData.stripeSubscriptionId || (existingIdx >= 0 ? state.subscriptions[existingIdx].paddleSubscriptionId : null),
+        paddlePriceId: subData.paddlePriceId || subData.stripePriceId || (existingIdx >= 0 ? state.subscriptions[existingIdx].paddlePriceId : null),
+        paddleTransactionId: subData.paddleTransactionId || (existingIdx >= 0 ? state.subscriptions[existingIdx].paddleTransactionId : null),
+        // Backward-compat aliases
+        stripeCustomerId: subData.paddleCustomerId || subData.stripeCustomerId || (existingIdx >= 0 ? state.subscriptions[existingIdx].paddleCustomerId : null),
+        stripeSubscriptionId: subData.paddleSubscriptionId || subData.stripeSubscriptionId || (existingIdx >= 0 ? state.subscriptions[existingIdx].paddleSubscriptionId : null),
+        planTier: subData.planTier || (existingIdx >= 0 ? state.subscriptions[existingIdx].planTier : 'pro'),
+        status: subData.status || (existingIdx >= 0 ? state.subscriptions[existingIdx].status : 'inactive'),
+        currentPeriodEnd: subData.currentPeriodEnd !== undefined ? subData.currentPeriodEnd : (existingIdx >= 0 ? state.subscriptions[existingIdx].currentPeriodEnd : null),
+        cancelAtPeriodEnd: subData.cancelAtPeriodEnd !== undefined ? subData.cancelAtPeriodEnd : (existingIdx >= 0 ? state.subscriptions[existingIdx].cancelAtPeriodEnd : false),
         updatedAt: new Date().toISOString(),
         createdAt: existingIdx >= 0 ? state.subscriptions[existingIdx].createdAt : new Date().toISOString()
       };
@@ -326,6 +359,70 @@ export const db = {
     list() {
       const state = loadDb();
       return state.webhook_events || [];
+    }
+  },
+
+  // Jobs Repository (Database Integration)
+  jobs: {
+    list({ query = '', category = '', remoteOnly = false } = {}) {
+      const state = loadDb();
+      let jobs = Array.isArray(state.jobs) ? [...state.jobs] : [];
+      if (!jobs.length) {
+        jobs = [...INITIAL_JOBS_DATASET];
+        state.jobs = jobs;
+        saveDb(state);
+      }
+
+      // Filter by query (title, company, description, skills)
+      if (query && query.trim()) {
+        const q = query.toLowerCase().trim();
+        jobs = jobs.filter(job =>
+          (job.title && job.title.toLowerCase().includes(q)) ||
+          (job.company && job.company.toLowerCase().includes(q)) ||
+          (job.description && job.description.toLowerCase().includes(q)) ||
+          (Array.isArray(job.skills) && job.skills.some(s => s.toLowerCase().includes(q)))
+        );
+      }
+
+      // Filter by category
+      if (category && category !== 'All' && category !== '') {
+        const cat = category.toLowerCase().trim();
+        jobs = jobs.filter(job => job.category && job.category.toLowerCase().includes(cat));
+      }
+
+      // Filter by remote status
+      if (remoteOnly === true || remoteOnly === 'true') {
+        jobs = jobs.filter(job => job.remote === true);
+      }
+
+      return jobs;
+    },
+    findById(id) {
+      const state = loadDb();
+      return (state.jobs || []).find(j => j.id === id) || null;
+    },
+    count() {
+      const state = loadDb();
+      return (state.jobs || []).length;
+    },
+    create(jobData) {
+      const state = loadDb();
+      if (!state.jobs) state.jobs = [];
+      const newJob = {
+        id: jobData.id || `job_jdl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        companyInitial: jobData.companyInitial || (jobData.company ? jobData.company.charAt(0).toUpperCase() : 'J'),
+        remote: !!jobData.remote,
+        remoteText: jobData.remoteText || (jobData.remote ? 'Remote Allowed' : 'On-Site'),
+        employmentType: jobData.employmentType || 'Full-time',
+        postedAt: jobData.postedAt || 'Just now',
+        source: jobData.source || 'JobDataLake API',
+        skills: Array.isArray(jobData.skills) ? jobData.skills : [],
+        ...jobData,
+        createdAt: new Date().toISOString()
+      };
+      state.jobs.unshift(newJob);
+      saveDb(state);
+      return newJob;
     }
   }
 };

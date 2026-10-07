@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Rater · Professional ATS & Career Intelligence Dashboard</title>
-    <meta name="description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts career category, and rates match similarity against job descriptions with Recharts analytics.">
-    <meta property="og:title" content="Resume Rater · Professional ATS & Career Intelligence Dashboard">
-    <meta property="og:description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts career category, and rates match similarity against job descriptions with Recharts analytics.">
+    <title>Resume Rater</title>
+    <meta name="description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts category, and rates match similarity against job descriptions.">
+    <meta property="og:title" content="Resume Rater">
+    <meta property="og:description" content="Resume and Job Description Evaluator that parses resumes, extracts CV sections, predicts category, and rates match similarity against job descriptions.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Paddle Billing SDK (Paddle.js v2) -->
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 
     <style>
         :root {
@@ -30,6 +33,8 @@
             --status-error: #dc2626;
             --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            --layout-max-width: 1260px;
+            --layout-gutter: 1.5rem;
         }
 
         * {
@@ -38,27 +43,49 @@
             padding: 0;
         }
 
-        body {
+        html, body {
             font-family: var(--font-sans);
             background-color: var(--bg-canvas);
             color: var(--text-primary);
             line-height: 1.55;
             -webkit-font-smoothing: antialiased;
             min-height: 100vh;
+            overflow-x: hidden;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Top Bar Contract (3 zones) */
+        /* Unified Master Layout Wrapper (Guarantees Equal Left & Right Margins Across All Sections) */
+        .site-container,
+        .top-bar-inner,
+        .main-container,
+        .footer-inner {
+            max-width: var(--layout-max-width);
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: var(--layout-gutter);
+            padding-right: var(--layout-gutter);
+            box-sizing: border-box;
+        }
+
+        /* Unified Header & Top Bar Layout */
         .top-bar {
-            height: 64px;
+            width: 100%;
             background: var(--surface-card);
             border-bottom: 1px solid var(--border-hairline);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-sizing: border-box;
+        }
+
+        .top-bar-inner {
+            height: 64px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 40;
         }
 
         .brand-wordmark {
@@ -79,7 +106,22 @@
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 1.75rem;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1080px) {
+            .nav-links {
+                gap: 1rem;
+            }
+            .nav-link {
+                font-size: 0.8125rem;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .nav-links {
+                display: none;
+            }
         }
 
         .nav-link {
@@ -153,15 +195,17 @@
             background: var(--accent-primary-hover);
         }
 
-        /* Main Workspace */
+        /* Main Workspace (Unified Centered Wrapper) */
         .main-container {
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem 5rem;
+            padding-top: 2rem;
+            padding-bottom: 5rem;
+            min-width: 0;
+            flex: 1 0 auto;
         }
 
         /* Hero Header */
         .hero-section {
+            width: 100%;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
@@ -170,6 +214,7 @@
             margin-bottom: 2rem;
             padding-bottom: 1.25rem;
             border-bottom: 1px solid var(--border-hairline);
+            box-sizing: border-box;
         }
 
         .hero-title {
@@ -204,12 +249,15 @@
             gap: 0.35rem;
         }
 
-        /* Split-Pane Grid Architecture */
+        /* Split-Pane Grid Architecture (minmax(0, 1fr) prevents grid blowout) */
         .workspace-grid {
             display: grid;
-            grid-template-columns: 380px 1fr;
-            gap: 1.75rem;
+            grid-template-columns: 360px minmax(0, 1fr);
+            gap: 1.5rem;
             align-items: start;
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
         }
 
         @media (max-width: 1080px) {
@@ -225,6 +273,9 @@
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .card-header-row {
@@ -596,13 +647,24 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         /* Top Kicker Metric Cards */
         .metrics-banner-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 1rem;
+            width: 100%;
+            min-width: 0;
+        }
+
+        @media (max-width: 820px) {
+            .metrics-banner-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .metric-card {
@@ -1298,6 +1360,75 @@
             color: var(--accent-primary);
         }
 
+        .jobs-pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.15rem;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            margin-top: 1.25rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .jobs-page-info {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .jobs-page-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-job-page {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--border-hairline);
+            background: #ffffff;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-job-page:hover:not(:disabled) {
+            border-color: var(--text-primary);
+            color: var(--text-primary);
+        }
+
+        .btn-job-page:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .btn-job-page.active-toggle {
+            background: var(--accent-light);
+            border-color: #bfdbfe;
+            color: var(--accent-primary);
+        }
+
+        .btn-job-page.active-toggle:hover {
+            background: #dbeafe;
+        }
+
+        .jobs-page-current {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding: 0 0.35rem;
+            font-family: var(--font-mono);
+        }
+
         /* Pricing Section */
         .pricing-section {
             margin-top: 3.5rem;
@@ -1321,8 +1452,11 @@
 
         .pricing-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            max-width: 860px;
+            margin: 0 auto;
+            gap: 1.75rem;
+            justify-content: center;
         }
 
         .pricing-card {
@@ -1548,53 +1682,105 @@
         .btn-dev-simulate:hover {
             background: var(--surface-subtle);
         }
+
+        /* Unified Footer Layout */
+        .site-footer {
+            width: 100%;
+            border-top: 1px solid var(--border-hairline);
+            background: var(--surface-card);
+            padding: 2rem 0;
+            box-sizing: border-box;
+            margin-top: auto;
+        }
+
+        .footer-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-logo {
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .footer-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.15s ease;
+            font-weight: 500;
+        }
+
+        .footer-link:hover {
+            color: var(--accent-primary);
+        }
     </style>
 </head>
 <body>
     <!-- Top Bar Contract -->
     <header class="top-bar">
-        <a href="/" class="brand-wordmark">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-            Resume Rater
-        </a>
+        <div class="top-bar-inner site-container">
+            <a href="/" class="brand-wordmark">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Resume Rater
+            </a>
 
-        <nav class="nav-links">
-            <a href="#upload-section" class="nav-link">PDF Parser</a>
-            <a href="#tab-recharts" class="nav-link nav-tab-link" data-tab-target="tab-recharts">Match Radar</a>
-            <a href="#tab-sections" class="nav-link nav-tab-link" data-tab-target="tab-sections">CV Sections</a>
-            <a href="#tab-matcher" class="nav-link nav-tab-link" data-tab-target="tab-matcher">Role Matcher</a>
-            <a href="#tab-jobs" class="nav-link nav-tab-link" data-tab-target="tab-jobs">Job Listings</a>
-            <a href="#pricing" class="nav-link">Pro Plan ($5/mo)</a>
-        </nav>
+            <nav class="nav-links">
+                <a href="#upload-section" class="nav-link">PDF Parser</a>
+                <a href="#tab-recharts" class="nav-link nav-tab-link" data-tab-target="tab-recharts">Match Radar</a>
+                <a href="#tab-sections" class="nav-link nav-tab-link" data-tab-target="tab-sections">CV Sections</a>
+                <a href="#tab-matcher" class="nav-link nav-tab-link" data-tab-target="tab-matcher">Role Matcher</a>
+                <a href="#tab-jobs" class="nav-link nav-tab-link" data-tab-target="tab-jobs">Job Listings</a>
+                <a href="#pricing" class="nav-link">Pro Plan ($5/mo)</a>
+            </nav>
 
-        <div class="quota-indicator">
-            <div id="quotaNavDisplay">
-                <% if (locals.billing && billing.isPro) { %>
-                    <span class="quota-badge-pro">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        Pro Unlimited
-                    </span>
-                <% } else { %>
-                    <span class="quota-text">
-                        Free Plan · <span class="quota-badge-free" id="headerScansCount"><%= (locals.billing ? billing.scansUsed : 0) %>/3 scans</span>
-                    </span>
-                <% } %>
+            <div class="quota-indicator">
+                <div id="quotaNavDisplay">
+                    <% if (locals.billing && billing.isPro) { %>
+                        <span class="quota-badge-pro">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Pro Unlimited
+                        </span>
+                    <% } else { %>
+                        <span class="quota-text">
+                            Free Plan · <span class="quota-badge-free" id="headerScansCount"><%= (locals.billing ? billing.scansUsed : 0) %>/3 scans</span>
+                        </span>
+                    <% } %>
+                </div>
+
+                <button type="button" class="btn-upgrade-nav" id="btnNavUpgradeAction">
+                    <%= (locals.billing && billing.isPro) ? 'Pro Active' : 'Upgrade ($5/mo)' %>
+                </button>
             </div>
-
-            <button type="button" class="btn-upgrade-nav" id="btnNavUpgradeAction">
-                <%= (locals.billing && billing.isPro) ? 'Pro Active' : 'Upgrade ($5/mo)' %>
-            </button>
         </div>
     </header>
 
     <!-- Main Workspace -->
-    <main class="main-container">
+    <main class="main-container site-container">
         <!-- Hero Section -->
         <div class="hero-section">
             <div>
@@ -1957,16 +2143,33 @@
                                             <span id="jobsStatusText">Fetching live job opportunities from JobDataLake API...</span>
                                         </div>
                                         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                                            <span class="jobs-status-tag" id="jobsCountBadge">12 Positions</span>
-                                            <span class="jobs-status-tag" style="background: #f1f5f9; color: var(--text-secondary);" id="jobsSourceBadge">JobDataLake API Live</span>
+                                            <span class="jobs-status-tag" id="jobsCountBadge">All Positions</span>
+                                            <span class="jobs-status-tag" style="background: #f1f5f9; color: var(--text-secondary);" id="jobsSourceBadge">JobDataLake API & Database</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Dynamic Job Cards List -->
+                                <!-- Dynamic Job Cards List (All Database Jobs) -->
                                 <div class="jobs-cards-list" id="jobsCardsContainer">
                                     <div style="text-align: center; padding: 2.5rem; color: var(--text-muted); font-size: 0.8125rem;">
-                                        Loading live job opportunities from JobDataLake API...
+                                        Loading all job opportunities from database...
+                                    </div>
+                                </div>
+
+                                <!-- Pagination & Display Controls for Database Jobs -->
+                                <div class="jobs-pagination-bar" id="jobsPaginationBar" style="display: none;">
+                                    <div class="jobs-page-info" id="jobsPageInfo">Displaying all positions retrieved from database</div>
+                                    <div class="jobs-page-controls">
+                                        <button type="button" class="btn-job-page" id="btnJobsPrevPage">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                            Previous
+                                        </button>
+                                        <span class="jobs-page-current" id="jobsPageCurrent">Page 1 of 1</span>
+                                        <button type="button" class="btn-job-page" id="btnJobsNextPage">
+                                            Next
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                        </button>
+                                        <button type="button" class="btn-job-page active-toggle" id="btnJobsToggleShowAll">Display All Positions</button>
                                     </div>
                                 </div>
                             </div>
@@ -2122,7 +2325,7 @@ PROJECTS
         <div class="dev-sandbox-bar">
             <div>
                 <strong>Sandbox & Testing Controls:</strong>
-                <span class="card-caption" style="margin-left: 0.5rem;">Simulate Stripe and quota limit flows without a live credit card</span>
+                <span class="card-caption" style="margin-left: 0.5rem;">Simulate Paddle and quota limit flows without a live credit card</span>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <button type="button" class="dev-sandbox-btn" id="btnDevTogglePro">Toggle Pro Status ($5/mo)</button>
@@ -2133,6 +2336,30 @@ PROJECTS
         <% } %>
     </main>
 
+    <!-- Unified Footer -->
+    <footer class="site-footer">
+        <div class="footer-inner site-container">
+            <div class="footer-brand">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary);">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <span class="footer-logo">Resume Rater</span>
+                <span>· ATS & Career Intelligence Engine</span>
+            </div>
+            <nav class="footer-links" aria-label="Footer Navigation">
+                <a href="#upload-section" class="footer-link">Parser</a>
+                <a href="#tab-recharts" class="footer-link">Match Radar</a>
+                <a href="#tab-sections" class="footer-link">CV Sections</a>
+                <a href="#tab-matcher" class="footer-link">Role Matcher</a>
+                <a href="#tab-jobs" class="footer-link">Job Listings</a>
+                <a href="#pricing" class="footer-link">Pro Plan</a>
+            </nav>
+        </div>
+    </footer>
+
     <!-- Paywall Modal Dialog -->
     <div class="modal-backdrop" id="upgradeModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-card">
@@ -2142,7 +2369,7 @@ PROJECTS
 
             <h3 class="modal-title" id="modalTitle">Monthly Free Scan Limit Reached</h3>
             <p class="modal-desc" id="modalDesc">
-                You've used all 3 complimentary ATS scans for this month. Upgrade to Pro for just <strong>$5/month</strong> for unlimited scans, multi-engine simulations, and Recharts gap analytics.
+                You've used all 3 complimentary ATS scans for this month. Upgrade to Pro for just <strong>$5/month</strong> with Paddle for unlimited scans, multi-engine simulations, and Recharts gap analytics.
             </p>
 
             <div class="plan-choice-grid">
@@ -2160,7 +2387,7 @@ PROJECTS
 
             <button type="button" class="btn-checkout-primary" id="btnModalCheckoutAction">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-                <span id="btnModalCheckoutText">Upgrade with Stripe ($5/mo)</span>
+                <span id="btnModalCheckoutText">Upgrade with Paddle ($5/mo)</span>
             </button>
 
             <% if (typeof isDevMode !== 'undefined' && isDevMode) { %>
@@ -2250,6 +2477,17 @@ PROJECTS
             const jobsStatusText = document.getElementById('jobsStatusText');
             const jobsCountBadge = document.getElementById('jobsCountBadge');
             const jobsTabCounter = document.getElementById('jobsTabCounter');
+
+            // Pagination & Display State for All Database Jobs
+            const jobsPaginationBar = document.getElementById('jobsPaginationBar');
+            const jobsPageInfo = document.getElementById('jobsPageInfo');
+            const jobsPageCurrent = document.getElementById('jobsPageCurrent');
+            const btnJobsPrevPage = document.getElementById('btnJobsPrevPage');
+            const btnJobsNextPage = document.getElementById('btnJobsNextPage');
+            const btnJobsToggleShowAll = document.getElementById('btnJobsToggleShowAll');
+            let jobsDisplayMode = 'all'; // Default: 'all' to show all retrieved database jobs
+            let jobsCurrentPage = 1;
+            const JOBS_PAGE_SIZE = 12;
 
             let currentFile = null;
             let currentParsedData = null;
@@ -2776,13 +3014,14 @@ PROJECTS
 
                 if (jobsStatusBanner && jobsStatusText) {
                     if (currentParsedData && currentParsedData.rawText) {
-                        jobsStatusText.innerHTML = `<strong>ATS Match Active:</strong> Ranked against <em>${currentParsedData.filename || 'Candidate Resume'}</em> (${currentParsedData.category || 'Career Role'}).`;
+                        jobsStatusText.innerHTML = `<strong>ATS Match Active:</strong> Evaluated all ${sorted.length} positions against <em>${currentParsedData.filename || 'Candidate Resume'}</em> (${currentParsedData.category || 'Career Role'}).`;
                     } else {
-                        jobsStatusText.innerHTML = `Showing active tech listings. <em>Upload or select a resume on the left</em> to activate live TF-IDF vector match scoring.`;
+                        jobsStatusText.innerHTML = `Displaying all ${sorted.length} tech positions from database. <em>Upload or select a resume on the left</em> to activate live TF-IDF vector match scoring.`;
                     }
                 }
 
                 if (sorted.length === 0) {
+                    if (jobsPaginationBar) jobsPaginationBar.style.display = 'none';
                     jobsCardsContainer.innerHTML = `
                         <div style="text-align: center; padding: 3rem 1.5rem; background: #fafafa; border: 1px solid var(--border-hairline); border-radius: 8px;">
                             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--text-muted); margin: 0 auto 0.75rem;">
@@ -2800,15 +3039,56 @@ PROJECTS
                             if (jobsSearchInput) jobsSearchInput.value = '';
                             if (jobsCategoryFilter) jobsCategoryFilter.value = '';
                             if (jobsRemoteToggle) jobsRemoteToggle.checked = false;
+                            jobsCurrentPage = 1;
                             fetchAndRenderJobs();
                         });
                     }
                     return;
                 }
 
+                // Manage display mode & pagination slices
+                let displayJobs = sorted;
+                if (jobsPaginationBar) {
+                    jobsPaginationBar.style.display = 'flex';
+                    if (jobsDisplayMode === 'all') {
+                        displayJobs = sorted;
+                        if (jobsPageInfo) jobsPageInfo.textContent = `Displaying all ${sorted.length} positions retrieved from database`;
+                        if (jobsPageCurrent) jobsPageCurrent.textContent = `All ${sorted.length} visible`;
+                        if (btnJobsPrevPage) btnJobsPrevPage.style.display = 'none';
+                        if (btnJobsNextPage) btnJobsNextPage.style.display = 'none';
+                        if (btnJobsToggleShowAll) {
+                            btnJobsToggleShowAll.textContent = sorted.length > JOBS_PAGE_SIZE ? `Paginate (${JOBS_PAGE_SIZE}/page)` : `Showing All (${sorted.length})`;
+                            btnJobsToggleShowAll.classList.add('active-toggle');
+                        }
+                    } else {
+                        const totalPages = Math.ceil(sorted.length / JOBS_PAGE_SIZE) || 1;
+                        if (jobsCurrentPage > totalPages) jobsCurrentPage = 1;
+                        const startIdx = (jobsCurrentPage - 1) * JOBS_PAGE_SIZE;
+                        displayJobs = sorted.slice(startIdx, startIdx + JOBS_PAGE_SIZE);
+
+                        if (jobsPageInfo) jobsPageInfo.textContent = `Showing positions ${startIdx + 1}–${Math.min(startIdx + JOBS_PAGE_SIZE, sorted.length)} of ${sorted.length} in database`;
+                        if (jobsPageCurrent) {
+                            jobsPageCurrent.textContent = `Page ${jobsCurrentPage} of ${totalPages}`;
+                            jobsPageCurrent.style.display = 'inline-block';
+                        }
+                        if (btnJobsPrevPage) {
+                            btnJobsPrevPage.style.display = 'inline-flex';
+                            btnJobsPrevPage.disabled = jobsCurrentPage <= 1;
+                        }
+                        if (btnJobsNextPage) {
+                            btnJobsNextPage.style.display = 'inline-flex';
+                            btnJobsNextPage.disabled = jobsCurrentPage >= totalPages;
+                        }
+                        if (btnJobsToggleShowAll) {
+                            btnJobsToggleShowAll.textContent = `Display All (${sorted.length})`;
+                            btnJobsToggleShowAll.classList.remove('active-toggle');
+                        }
+                    }
+                }
+
                 const candidateFullText = (currentParsedData ? `${currentParsedData.rawText || ''} ${currentParsedData.cleanedText || ''} ${JSON.stringify(currentParsedData.sections || {})}` : '').toLowerCase();
 
-                jobsCardsContainer.innerHTML = sorted.map(job => {
+                jobsCardsContainer.innerHTML = displayJobs.map(job => {
                     const matchScore = job.matchPercentage !== undefined ? job.matchPercentage : null;
                     const rating = job.matchRating || (matchScore >= 75 ? 'High Match' : matchScore >= 45 ? 'Medium Match' : 'Low Match');
                     const pillClass = matchScore !== null ? (rating.includes('High') ? 'high' : rating.includes('Medium') ? 'medium' : 'low') : 'neutral';
@@ -2953,15 +3233,49 @@ PROJECTS
 
             window.fetchAndRenderJobs = fetchAndRenderJobs;
 
+            if (btnJobsToggleShowAll) {
+                btnJobsToggleShowAll.addEventListener('click', () => {
+                    jobsDisplayMode = jobsDisplayMode === 'all' ? 'paged' : 'all';
+                    renderJobsList(cachedJobs, !!(currentParsedData && currentParsedData.rawText));
+                });
+            }
+
+            if (btnJobsPrevPage) {
+                btnJobsPrevPage.addEventListener('click', () => {
+                    if (jobsCurrentPage > 1) {
+                        jobsCurrentPage--;
+                        renderJobsList(cachedJobs, !!(currentParsedData && currentParsedData.rawText));
+                        const tabJobs = document.getElementById('tab-jobs');
+                        if (tabJobs) tabJobs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            }
+
+            if (btnJobsNextPage) {
+                btnJobsNextPage.addEventListener('click', () => {
+                    const totalPages = Math.ceil(cachedJobs.length / JOBS_PAGE_SIZE) || 1;
+                    if (jobsCurrentPage < totalPages) {
+                        jobsCurrentPage++;
+                        renderJobsList(cachedJobs, !!(currentParsedData && currentParsedData.rawText));
+                        const tabJobs = document.getElementById('tab-jobs');
+                        if (tabJobs) tabJobs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            }
+
             if (jobsSearchInput) {
                 jobsSearchInput.addEventListener('input', () => {
                     clearTimeout(jobsDebounceTimer);
+                    jobsCurrentPage = 1;
                     jobsDebounceTimer = setTimeout(fetchAndRenderJobs, 250);
                 });
             }
 
             if (jobsCategoryFilter) {
-                jobsCategoryFilter.addEventListener('change', fetchAndRenderJobs);
+                jobsCategoryFilter.addEventListener('change', () => {
+                    jobsCurrentPage = 1;
+                    fetchAndRenderJobs();
+                });
             }
 
             if (jobsSortFilter) {
@@ -2971,11 +3285,17 @@ PROJECTS
             }
 
             if (jobsRemoteToggle) {
-                jobsRemoteToggle.addEventListener('change', fetchAndRenderJobs);
+                jobsRemoteToggle.addEventListener('change', () => {
+                    jobsCurrentPage = 1;
+                    fetchAndRenderJobs();
+                });
             }
 
             if (btnRefreshJobs) {
-                btnRefreshJobs.addEventListener('click', fetchAndRenderJobs);
+                btnRefreshJobs.addEventListener('click', () => {
+                    jobsCurrentPage = 1;
+                    fetchAndRenderJobs();
+                });
             }
 
             // ==========================================
@@ -3055,14 +3375,14 @@ PROJECTS
                     selectedPlan = 'monthly';
                     planChoiceMonthly.classList.add('selected');
                     planChoiceAnnual.classList.remove('selected');
-                    if (btnModalCheckoutText) btnModalCheckoutText.textContent = 'Upgrade with Stripe ($5/mo)';
+                    if (btnModalCheckoutText) btnModalCheckoutText.textContent = 'Upgrade with Paddle ($5/mo)';
                 });
 
                 planChoiceAnnual.addEventListener('click', () => {
                     selectedPlan = 'annual';
                     planChoiceAnnual.classList.add('selected');
                     planChoiceMonthly.classList.remove('selected');
-                    if (btnModalCheckoutText) btnModalCheckoutText.textContent = 'Upgrade with Stripe ($39/yr)';
+                    if (btnModalCheckoutText) btnModalCheckoutText.textContent = 'Upgrade with Paddle ($39/yr)';
                 });
             }
 
@@ -3074,13 +3394,13 @@ PROJECTS
                 });
             }
 
-            // Initiate Checkout
+            // Initiate Paddle Checkout
             async function initiateCheckout(plan = 'monthly') {
                 try {
                     clearAlert();
                     if (btnModalCheckoutAction) {
                         btnModalCheckoutAction.disabled = true;
-                        btnModalCheckoutAction.textContent = 'Redirecting to Stripe...';
+                        btnModalCheckoutAction.textContent = 'Opening Paddle Checkout...';
                     }
 
                     const res = await fetch('/api/create-checkout-session', {
@@ -3091,11 +3411,33 @@ PROJECTS
                     const data = await res.json();
 
                     if (!res.ok || !data.success) {
-                        throw new Error(data.error || 'Failed to start Stripe checkout session.');
+                        throw new Error(data.error || 'Failed to start Paddle checkout session.');
                     }
 
+                    // If Paddle.js is loaded and live transaction is created, open Paddle overlay
+                    if (window.Paddle && data.clientToken && data.transactionId && !data.isMock) {
+                        try {
+                            if (data.environment === 'sandbox') {
+                                Paddle.Environment.set('sandbox');
+                            }
+                            Paddle.Initialize({ token: data.clientToken });
+                            Paddle.Checkout.open({
+                                transactionId: data.transactionId,
+                                settings: {
+                                    successUrl: window.location.origin + '/?billing=success&session_id=' + data.transactionId
+                                }
+                            });
+                            return;
+                        } catch (paddleErr) {
+                            console.warn('Paddle.js inline overlay fallback:', paddleErr.message);
+                        }
+                    }
+
+                    // Fallback to checkoutUrl (hosted checkout or simulated sandbox flow)
                     if (data.checkoutUrl) {
                         window.location.href = data.checkoutUrl;
+                    } else {
+                        throw new Error('No checkout URL or transaction provided by Paddle.');
                     }
                 } catch (err) {
                     console.error('Checkout error:', err);
@@ -3103,7 +3445,7 @@ PROJECTS
                 } finally {
                     if (btnModalCheckoutAction) {
                         btnModalCheckoutAction.disabled = false;
-                        btnModalCheckoutAction.textContent = selectedPlan === 'annual' ? 'Upgrade with Stripe ($39/yr)' : 'Upgrade with Stripe ($5/mo)';
+                        btnModalCheckoutAction.textContent = selectedPlan === 'annual' ? 'Upgrade with Paddle ($39/yr)' : 'Upgrade with Paddle ($5/mo)';
                     }
                 }
             }
