@@ -2,9 +2,6 @@
  * Job Listings Service with JobDataLake API Integration & Real-Time Resume Match Scoring
  */
 import { db } from '../db/index.js';
-import { INITIAL_JOBS_DATASET } from '../db/jobs-data.js';
-
-export const JOB_LISTINGS = INITIAL_JOBS_DATASET;
 
 export const jobsService = {
   /**

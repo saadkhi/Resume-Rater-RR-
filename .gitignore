@@ -1,5 +1,11 @@
 node_modules/
 .env
+cv_sections.csv
+uploads/*
+!uploads/Saads_CV_Resume.pdf
+!uploads/resume1.pdf
+!uploads/resume2.pdf
+!uploads/Saad_Ali_ResumeCV_Old.pdf
 vite.config.js.timestamp-*.mjs
 vite.config.mjs.timestamp-*.mjs
 vite.config.cjs.timestamp-*.mjs

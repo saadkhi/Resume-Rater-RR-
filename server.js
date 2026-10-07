@@ -7,7 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import { db } from './src/db/index.js';
-import { billingService, checkSubscriptionAndQuota, PLANS } from './src/services/billing.js';
+import { billingService, checkSubscriptionAndQuota } from './src/services/billing.js';
 import { jobsService } from './src/services/jobs.js';
 import { apiLimiter, uploadLimiter, billingLimiter, getSafeErrorMessage, validatePdfMagicBytes, cleanupFile } from './src/middleware/security.js';
 
@@ -18,6 +18,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 const isDevMode = !isProduction;
+
+// Trust reverse proxy for accurate client IP resolution behind load balancers/proxies
+app.set('trust proxy', 1);
 
 // Vercel / Serverless Read-Only File System Compatibility
 const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NOW_REGION);
@@ -190,11 +193,16 @@ const STOP_WORDS = new Set([
   'why', 'with', 'would', 'you', 'your', 'yours', 'yourself', 'yourselves'
 ]);
 
+const TECH_SHORT_TOKENS = new Set([
+  'c', 'r', 'go', 'ai', 'ml', 'ui', 'ux', 'db', 'qa', 'os', 'ci', 'cd', 'io', 'js', 'ts'
+]);
+
 function tokenize(text) {
+  if (typeof text !== 'string') return [];
   return text.toLowerCase()
     .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
-    .filter(t => t.length > 2 && !STOP_WORDS.has(t));
+    .filter(t => (t.length > 2 || TECH_SHORT_TOKENS.has(t)) && !STOP_WORDS.has(t));
 }
 
 // Load training dataset and build category centroids & IDF
@@ -258,7 +266,8 @@ function computeTfidfVector(text) {
   }
   const vec = {};
   let norm = 0;
-  const defaultIdf = Math.log(1 + (totalDocs || 1)) + 1;
+  // Bounded baseline IDF for unseen words so out-of-vocabulary terms do not distort vectors
+  const defaultIdf = totalDocs > 0 ? (Math.log((1 + totalDocs) / (1 + Math.max(1, Math.round(totalDocs * 0.15)))) + 1) : 2.5;
   for (const [t, count] of Object.entries(tf)) {
     const weight = count * (idf[t] || defaultIdf);
     vec[t] = weight;
@@ -342,22 +351,35 @@ async function pdfToText(filePath) {
 }
 
 function cleanResume(txt) {
+  if (typeof txt !== 'string') return '';
   let cleanText = txt.replace(/http\S+\s*/g, ' ');
   cleanText = cleanText.replace(/\b(RT|cc)\b/g, ' ');
   cleanText = cleanText.replace(/#\S+\s*/g, ' ');
   cleanText = cleanText.replace(/@\S+/g, ' ');
+  // Normalize programming languages & technical acronyms with symbols before removing punctuation
+  cleanText = cleanText.replace(/c\+\+/gi, ' cpp ');
+  cleanText = cleanText.replace(/c#/gi, ' csharp ');
+  cleanText = cleanText.replace(/\.net\b/gi, ' dotnet ');
+  cleanText = cleanText.replace(/node\.js\b/gi, ' nodejs ');
+  cleanText = cleanText.replace(/react\.js\b/gi, ' reactjs ');
+  cleanText = cleanText.replace(/vue\.js\b/gi, ' vuejs ');
   cleanText = cleanText.replace(/[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/g, ' ');
   cleanText = cleanText.replace(/[^\x00-\x7f]/g, ' ');
   cleanText = cleanText.replace(/\s+/g, ' ').trim();
   return cleanText;
 }
 
+const ALL_SECTION_NAMES = ['Education', 'Experience', 'Skills', 'Projects', 'Certifications', 'Languages', 'Summary', 'Profile'];
+const getSectionTerminators = (currentSection) => ALL_SECTION_NAMES.filter(s => s.toLowerCase() !== currentSection.toLowerCase());
+
 function extractSectionRegex(cvText, sectionName, endKeywords) {
+  if (typeof cvText !== 'string') return `${sectionName} section not found.`;
   const lines = cvText.split(/\r?\n/);
   let capturing = false;
   const capturedLines = [];
-  const startRegex = new RegExp('^\\s*' + sectionName + '[:\\s]*$', 'i');
-  const endRegex = new RegExp('^\\s*(' + endKeywords.join('|') + ')[:\\s]*$', 'i');
+  const startRegex = new RegExp('^\\s*(?:[#*\\d.-]+\\s*)?' + sectionName + '[:\\s]*$', 'i');
+  const endKeywordsList = (Array.isArray(endKeywords) && endKeywords.length > 0) ? endKeywords : getSectionTerminators(sectionName);
+  const endRegex = new RegExp('^\\s*(?:[#*\\d.-]+\\s*)?(' + endKeywordsList.join('|') + ')[:\\s]*$', 'i');
 
   for (const line of lines) {
     if (!capturing) {
@@ -378,12 +400,17 @@ function extractSectionRegex(cvText, sectionName, endKeywords) {
   }
 
   // Fallback: search substring boundary
-  const subIdx = cvText.search(new RegExp('(^|\\n)\\s*' + sectionName, 'i'));
+  const subIdx = cvText.search(new RegExp('(?:^|\\n)\\s*(?:[#*\\d.-]+\\s*)?' + sectionName, 'i'));
   if (subIdx !== -1) {
     const fromSection = cvText.slice(subIdx);
-    const endMatch = fromSection.slice(sectionName.length + 1).search(new RegExp('(^|\\n)\\s*(' + endKeywords.join('|') + ')', 'im'));
-    if (endMatch !== -1) {
-      return fromSection.slice(0, sectionName.length + 1 + endMatch).trim();
+    const firstNewline = fromSection.indexOf('\n');
+    if (firstNewline !== -1) {
+      const contentAfterHeader = fromSection.slice(firstNewline + 1);
+      const endMatch = contentAfterHeader.search(new RegExp('(?:^|\\n)\\s*(?:[#*\\d.-]+\\s*)?(' + endKeywordsList.join('|') + ')[:\\s]', 'im'));
+      if (endMatch !== -1) {
+        return contentAfterHeader.slice(0, endMatch).trim();
+      }
+      return contentAfterHeader.trim();
     }
     return fromSection.trim();
   }
@@ -398,7 +425,11 @@ function saveToCsv(data) {
 
     const escapeCsv = (val) => {
       if (val === undefined || val === null) return '""';
-      const str = String(val);
+      let str = String(val);
+      // Neutralize formula / CSV injection
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = "'" + str;
+      }
       if (str.includes(',') || str.includes('"') || str.includes('\n')) {
         return `"${str.replace(/"/g, '""')}"`;
       }
@@ -502,10 +533,10 @@ async function analyzeResumePdf(filePath, originalName, jobDescriptionText = '',
   const cleanedResume = cleanResume(rawText);
 
   const sections = {
-    Education: extractSectionRegex(rawText, 'Education', ['Experience', 'Skills', 'Projects', 'Certifications', 'Languages']),
-    Experience: extractSectionRegex(rawText, 'Experience', ['Skills', 'Projects', 'Certifications', 'Languages']),
-    Skills: extractSectionRegex(rawText, 'Skills', ['Experience', 'Projects', 'Certifications', 'Languages']),
-    Projects: extractSectionRegex(rawText, 'Projects', ['Certifications', 'Languages'])
+    Education: extractSectionRegex(rawText, 'Education', getSectionTerminators('Education')),
+    Experience: extractSectionRegex(rawText, 'Experience', getSectionTerminators('Experience')),
+    Skills: extractSectionRegex(rawText, 'Skills', getSectionTerminators('Skills')),
+    Projects: extractSectionRegex(rawText, 'Projects', getSectionTerminators('Projects'))
   };
 
   const wordCount = rawText.trim() ? rawText.trim().split(/\s+/).length : 0;
@@ -552,7 +583,20 @@ async function analyzeResumePdf(filePath, originalName, jobDescriptionText = '',
 // REST API Endpoints
 
 // 1. API: Parse uploaded PDF resume (Protected by subscription & quota check)
-app.post('/api/parse-resume', uploadLimiter, checkSubscriptionAndQuota, upload.single('resume'), async (req, res) => {
+app.post('/api/parse-resume', uploadLimiter, checkSubscriptionAndQuota, (req, res, next) => {
+  upload.single('resume')(req, res, err => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ success: false, error: 'File size exceeds 15MB limit. Please upload a smaller PDF.' });
+        }
+        return res.status(400).json({ success: false, error: `Upload error: ${err.message}` });
+      }
+      return res.status(400).json({ success: false, error: err.message || 'File upload failed.' });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -675,12 +719,15 @@ app.get('/api/sample-resumes', (req, res) => {
 // 3. API: Parse an existing sample resume (Protected by subscription & quota check)
 app.post('/api/parse-sample', apiLimiter, checkSubscriptionAndQuota, async (req, res) => {
   try {
-    const { sampleName, job_description_text, job_keywords } = req.body;
-    if (!sampleName) {
-      return res.status(400).json({ success: false, error: 'sampleName is required.' });
+    const { sampleName, job_description_text, job_keywords, isSamplePreview } = req.body || {};
+    if (!sampleName || typeof sampleName !== 'string') {
+      return res.status(400).json({ success: false, error: 'sampleName is required and must be a string.' });
     }
 
     const safeSampleName = path.basename(sampleName);
+    if (!BUNDLED_SAMPLE_FILES.includes(safeSampleName)) {
+      return res.status(400).json({ success: false, error: 'Invalid sample file requested: ' + safeSampleName });
+    }
     const targetPath = resolveResumePath(safeSampleName);
     if (!fs.existsSync(targetPath)) {
       return res.status(404).json({ success: false, error: 'Sample file not found: ' + safeSampleName });
@@ -688,8 +735,8 @@ app.post('/api/parse-sample', apiLimiter, checkSubscriptionAndQuota, async (req,
 
     const analysis = await analyzeResumePdf(targetPath, safeSampleName, job_description_text || '', job_keywords || '');
 
-    // Consume scan quota for free users
-    if (req.consumeScanQuota) req.consumeScanQuota();
+    // Consume scan quota for free users unless previewing a bundled sample
+    if (req.consumeScanQuota && !isSamplePreview) req.consumeScanQuota();
 
     const currentMonth = new Date().toISOString().slice(0, 7);
     const updatedUsage = db.userUsage.getMonthlyUsage(req.user.id, currentMonth);
@@ -717,11 +764,11 @@ app.post('/api/parse-sample', apiLimiter, checkSubscriptionAndQuota, async (req,
 // 4. API: Interactive Match Evaluator against Job Description
 app.post('/api/evaluate-match', apiLimiter, (req, res) => {
   try {
-    const { resumeText, jobDescriptionText, resumeSections } = req.body;
-    if (!resumeText || !jobDescriptionText) {
+    const { resumeText, jobDescriptionText, resumeSections } = req.body || {};
+    if (typeof resumeText !== 'string' || typeof jobDescriptionText !== 'string' || !resumeText.trim() || !jobDescriptionText.trim()) {
       return res.status(400).json({
         success: false,
-        error: 'Both resumeText and jobDescriptionText are required.'
+        error: 'Both resumeText and jobDescriptionText are required string values.'
       });
     }
 
@@ -958,12 +1005,28 @@ app.post('/api/test/simulate-webhook', async (req, res) => {
 // Routes
 app.get('/', (req, res) => renderIndexDashboard(req, res));
 
-app.post('/upload', uploadLimiter, upload.fields([
-  { name: 'resume', maxCount: 1 },
-  { name: 'job_description', maxCount: 1 }
-]), async (req, res) => {
+app.post('/upload', uploadLimiter, (req, res, next) => {
+  upload.fields([
+    { name: 'resume', maxCount: 1 },
+    { name: 'job_description', maxCount: 1 }
+  ])(req, res, err => {
+    if (err) {
+      const msg = (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE')
+        ? 'File size exceeds 15MB limit. Please upload a smaller PDF.'
+        : (err.message || 'File upload failed.');
+      return renderIndexDashboard(req, res, { error: msg });
+    }
+    next();
+  });
+}, async (req, res) => {
   const uploadedFiles = [];
   try {
+    const files = req.files || {};
+    const resumeFile = files.resume ? files.resume[0] : null;
+    const jobDescriptionFile = files.job_description ? files.job_description[0] : null;
+    if (resumeFile) uploadedFiles.push(resumeFile.path);
+    if (jobDescriptionFile) uploadedFiles.push(jobDescriptionFile.path);
+
     const userId = req.headers['x-user-id'] || 'usr_demo_001';
     let user = db.users.find(userId);
     if (!user) {
@@ -988,7 +1051,8 @@ app.post('/upload', uploadLimiter, upload.fields([
           message: 'Upgrade to Pro ($5/month) for unlimited ATS scans, multi-engine simulations, and Recharts gap analysis.'
         });
       }
-      return res.status(403).render('index', {
+      res.status(403);
+      return renderIndexDashboard(req, res, {
         error: `Monthly free scan limit reached (${usage.scansUsed}/${usage.maxFreeScans}). Upgrade to Pro ($5/mo) for unlimited scans.`,
         prediction_category: null,
         resume_match_rating: null,
@@ -1006,16 +1070,11 @@ app.post('/upload', uploadLimiter, upload.fields([
       });
     }
 
-    const files = req.files || {};
-    const resumeFile = files.resume ? files.resume[0] : null;
-    const jobDescriptionFile = files.job_description ? files.job_description[0] : null;
-    if (resumeFile) uploadedFiles.push(resumeFile.path);
-    if (jobDescriptionFile) uploadedFiles.push(jobDescriptionFile.path);
     const jobDescriptionText = req.body.job_description_text ? req.body.job_description_text.trim() : '';
     const jobKeywords = req.body.job_keywords ? req.body.job_keywords.trim() : '';
 
     if (!resumeFile || (!jobDescriptionFile && !jobDescriptionText && !jobKeywords)) {
-      return res.render('index', {
+      return renderIndexDashboard(req, res, {
         error: 'No file part',
         prediction_category: null,
         resume_match_rating: null,
@@ -1037,10 +1096,10 @@ app.post('/upload', uploadLimiter, upload.fields([
 
     // Extract sections
     const resumeSections = {
-      Education: extractSectionRegex(resumeText, 'Education', ['Experience', 'Skills', 'Projects', 'Certifications', 'Languages']),
-      Experience: extractSectionRegex(resumeText, 'Experience', ['Skills', 'Projects', 'Certifications', 'Languages']),
-      Skills: extractSectionRegex(resumeText, 'Skills', ['Experience', 'Projects', 'Certifications', 'Languages']),
-      Projects: extractSectionRegex(resumeText, 'Projects', ['Certifications', 'Languages'])
+      Education: extractSectionRegex(resumeText, 'Education', getSectionTerminators('Education')),
+      Experience: extractSectionRegex(resumeText, 'Experience', getSectionTerminators('Experience')),
+      Skills: extractSectionRegex(resumeText, 'Skills', getSectionTerminators('Skills')),
+      Projects: extractSectionRegex(resumeText, 'Projects', getSectionTerminators('Projects'))
     };
 
     // Determine Job Description text

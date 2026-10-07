@@ -17,7 +17,6 @@
     "pdf-parse": "^2.4.5",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "recharts": "^3.10.1",
-    "stripe": "^23.0.0"
+    "recharts": "^3.10.1"
   }
 }

@@ -2493,6 +2493,16 @@ PROJECTS
             let currentParsedData = null;
             let selectedPlan = 'monthly';
 
+            function escapeHtml(str) {
+                if (str === null || str === undefined) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
             function formatBytes(bytes) {
                 if (!bytes || bytes === 0) return '0 KB';
                 const k = 1024;
@@ -2655,9 +2665,9 @@ PROJECTS
                 });
             });
 
-            async function parseSampleFile(sampleName, roleKeywords) {
+            async function parseSampleFile(sampleName, roleKeywords, isSamplePreview = false) {
                 clearAlert();
-                setLoadingState(true, `Loading sample (${sampleName})...`);
+                setLoadingState(true, `Loading sample (${escapeHtml(sampleName)})...`);
 
                 try {
                     const jdText = jobDescriptionTextarea ? jobDescriptionTextarea.value.trim() : '';
@@ -2669,7 +2679,8 @@ PROJECTS
                         body: JSON.stringify({
                             sampleName,
                             job_description_text: jdText,
-                            job_keywords: jdKeywords
+                            job_keywords: jdKeywords,
+                            isSamplePreview
                         })
                     });
 
@@ -2760,7 +2771,7 @@ PROJECTS
                 if (data.match?.keywordAlignment && keywordAlignmentList) {
                     keywordAlignmentList.innerHTML = data.match.keywordAlignment.slice(0, 8).map(kw => `
                         <div class="keyword-item ${kw.matched ? 'matched' : 'missing'}">
-                            <span>${kw.keyword}</span>
+                            <span>${escapeHtml(kw.keyword)}</span>
                             <span style="font-family: monospace; font-weight: bold; color: ${kw.matched ? '#16a34a' : '#dc2626'};">${kw.matched ? 'Matched' : 'Missing'}</span>
                         </div>
                     `).join('');
@@ -2909,7 +2920,7 @@ PROJECTS
                         if (data.keywordAlignment && keywordAlignmentList) {
                             keywordAlignmentList.innerHTML = data.keywordAlignment.slice(0, 8).map(kw => `
                                 <div class="keyword-item ${kw.matched ? 'matched' : 'missing'}">
-                                    <span>${kw.keyword}</span>
+                                    <span>${escapeHtml(kw.keyword)}</span>
                                     <span style="font-family: monospace; font-weight: bold; color: ${kw.matched ? '#16a34a' : '#dc2626'};">${kw.matched ? 'Matched' : 'Missing'}</span>
                                 </div>
                             `).join('');
@@ -3014,7 +3025,7 @@ PROJECTS
 
                 if (jobsStatusBanner && jobsStatusText) {
                     if (currentParsedData && currentParsedData.rawText) {
-                        jobsStatusText.innerHTML = `<strong>ATS Match Active:</strong> Evaluated all ${sorted.length} positions against <em>${currentParsedData.filename || 'Candidate Resume'}</em> (${currentParsedData.category || 'Career Role'}).`;
+                        jobsStatusText.innerHTML = `<strong>ATS Match Active:</strong> Evaluated all ${sorted.length} positions against <em>${escapeHtml(currentParsedData.filename || 'Candidate Resume')}</em> (${escapeHtml(currentParsedData.category || 'Career Role')}).`;
                     } else {
                         jobsStatusText.innerHTML = `Displaying all ${sorted.length} tech positions from database. <em>Upload or select a resume on the left</em> to activate live TF-IDF vector match scoring.`;
                     }
@@ -3102,29 +3113,29 @@ PROJECTS
                         return `
                             <span class="job-skill-chip ${isSkillMatched ? 'matched' : ''}" title="${isSkillMatched ? 'Matched in candidate profile' : 'Required skill'}">
                                 ${isSkillMatched ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
-                                ${skill}
+                                ${escapeHtml(skill)}
                             </span>
                         `;
                     }).join('');
 
                     return `
-                        <div class="job-card" data-job-id="${job.id}">
+                        <div class="job-card" data-job-id="${escapeHtml(job.id)}">
                             <div class="job-card-header">
                                 <div class="job-card-title-group">
                                     <div class="job-company-avatar">
-                                        ${job.companyInitial || (job.company ? job.company.charAt(0) : 'J')}
+                                        ${escapeHtml(job.companyInitial || (job.company ? job.company.charAt(0) : 'J'))}
                                     </div>
                                     <div>
-                                        <h3 class="job-title-text">${job.title}</h3>
+                                        <h3 class="job-title-text">${escapeHtml(job.title)}</h3>
                                         <div class="job-company-meta">
-                                            <span style="font-weight: 600; color: var(--text-primary);">${job.company}</span>
+                                            <span style="font-weight: 600; color: var(--text-primary);">${escapeHtml(job.company)}</span>
                                             <span>·</span>
                                             <span>
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: -1px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                                ${job.location}
+                                                ${escapeHtml(job.location)}
                                             </span>
                                             <span>·</span>
-                                            <span class="job-tag remote">${job.remoteText || (job.remote ? 'Remote' : 'On-Site')}</span>
+                                            <span class="job-tag remote">${escapeHtml(job.remoteText || (job.remote ? 'Remote' : 'On-Site'))}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -3133,7 +3144,7 @@ PROJECTS
                                     ${matchScore !== null ? `
                                         <span class="job-match-pill ${pillClass}">
                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                            ${matchScore}% Match · ${rating}
+                                            ${matchScore}% Match · ${escapeHtml(rating)}
                                         </span>
                                         <div class="job-meter-bar">
                                             <div class="job-meter-fill" style="width: ${matchScore}%; background: ${pillClass === 'high' ? '#16a34a' : pillClass === 'medium' ? '#d97706' : '#dc2626'};"></div>
@@ -3148,15 +3159,15 @@ PROJECTS
                             </div>
 
                             <div class="job-tags-row">
-                                <span class="job-tag">${job.category}</span>
-                                <span class="job-tag">${job.employmentType}</span>
-                                <span class="job-tag">${job.experienceLevel}</span>
-                                <span class="job-tag salary">${job.salary}</span>
-                                <span class="job-tag" style="color: var(--text-muted);">${job.postedAt}</span>
+                                <span class="job-tag">${escapeHtml(job.category)}</span>
+                                <span class="job-tag">${escapeHtml(job.employmentType)}</span>
+                                <span class="job-tag">${escapeHtml(job.experienceLevel)}</span>
+                                <span class="job-tag salary">${escapeHtml(job.salary)}</span>
+                                <span class="job-tag" style="color: var(--text-muted);">${escapeHtml(job.postedAt)}</span>
                                 <span class="job-tag" style="background: #ffffff; border-color: var(--border-hairline); color: var(--accent-primary);">JobDataLake API</span>
                             </div>
 
-                            <p class="job-description-text">${job.description}</p>
+                            <p class="job-description-text">${escapeHtml(job.description)}</p>
 
                             <div>
                                 <div style="font-size: 0.6875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem;">
@@ -3169,17 +3180,17 @@ PROJECTS
 
                             <div class="job-card-actions">
                                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    <button type="button" class="btn-job-action primary btn-evaluate-role" data-job-id="${job.id}">
+                                    <button type="button" class="btn-job-action primary btn-evaluate-role" data-job-id="${escapeHtml(job.id)}">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                         Evaluate in Role Matcher
                                     </button>
-                                    <button type="button" class="btn-job-action secondary btn-copy-job-reqs" data-job-id="${job.id}">
+                                    <button type="button" class="btn-job-action secondary btn-copy-job-reqs" data-job-id="${escapeHtml(job.id)}">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                         Copy Requirements
                                     </button>
                                 </div>
 
-                                <a href="${job.applyUrl}" target="_blank" rel="noopener noreferrer" class="btn-job-action secondary" style="color: var(--accent-primary);">
+                                <a href="${escapeHtml(job.applyUrl && /^https?:\/\//i.test(job.applyUrl) ? job.applyUrl : '#')}" target="_blank" rel="noopener noreferrer" class="btn-job-action secondary" style="color: var(--accent-primary);">
                                     <span>Apply on Company Site</span>
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                                 </a>
@@ -3338,14 +3349,15 @@ PROJECTS
 
             function handleUpgradeRequired(data) {
                 const errorMsg = data.error || data.message || 'Monthly free scan limit reached (3/3).';
-                const redirectUrl = data.redirectUrl || data.upgradeUrl || '/#pricing';
+                const rawRedirectUrl = data.redirectUrl || data.upgradeUrl || '/#pricing';
+                const redirectUrl = (rawRedirectUrl && (rawRedirectUrl.startsWith('/') || rawRedirectUrl.startsWith('#'))) ? rawRedirectUrl : '/#pricing';
 
                 showAlert(`⚠️ Limit Reached: ${errorMsg} Upgrade to Pro for $5/mo for unlimited scans.`, true);
 
                 if (upgradeModal) {
                     if (modalTitle) modalTitle.textContent = 'Monthly Free Scan Limit Reached';
                     if (modalDesc) {
-                        modalDesc.innerHTML = `You've used all <strong>${data.maxFreeScans || 3} complimentary ATS scans</strong> for this month. Upgrade to Pro for just <strong>$5/month</strong> for unlimited scans and full Recharts gap analytics, or <a href="${redirectUrl}" style="color: var(--accent-primary); font-weight: 600; text-decoration: underline;" id="modalPricingRedirectLink">view our subscription plans</a>.`;
+                        modalDesc.innerHTML = `You've used all <strong>${escapeHtml(data.maxFreeScans || 3)} complimentary ATS scans</strong> for this month. Upgrade to Pro for just <strong>$5/month</strong> for unlimited scans and full Recharts gap analytics, or <a href="${escapeHtml(redirectUrl)}" style="color: var(--accent-primary); font-weight: 600; text-decoration: underline;" id="modalPricingRedirectLink">view our subscription plans</a>.`;
                     }
                     upgradeModal.classList.add('open');
 
@@ -3558,6 +3570,12 @@ PROJECTS
                 showAlert('🎉 Thank you! Your Pro subscription is active with unlimited ATS scans.', false);
                 updateQuotaUI({ isPro: true });
                 history.replaceState(null, '', window.location.pathname);
+                // Synchronize Pro activation with backend in demo/simulation mode
+                fetch('/api/test/toggle-pro', { method: 'POST' }).then(() => {
+                    fetch('/api/subscription-status')
+                        .then(r => r.json())
+                        .then(d => { if (d.success) updateQuotaUI(d); });
+                }).catch(() => {});
             } else if (urlParams.get('billing') === 'canceled') {
                 showAlert('Checkout canceled. You are currently on the Free plan (3 scans/month).', true);
                 history.replaceState(null, '', window.location.pathname);
@@ -3573,10 +3591,10 @@ PROJECTS
             // State Initialization on Page Load
             // ==========================================
             // Automatically initialize dashboard with Saad Ali's sample resume
-            // and Data Scientist / Machine Learning benchmark fit on load!
+            // and Data Scientist / Machine Learning benchmark fit on load (preview mode, quota preserved)!
             window.addEventListener('DOMContentLoaded', () => {
                 fetchAndRenderJobs();
-                parseSampleFile('Saads_CV_Resume.pdf', 'Data Scientist, Machine Learning, Python, SQL, Statistics, Modeling');
+                parseSampleFile('Saads_CV_Resume.pdf', 'Data Scientist, Machine Learning, Python, SQL, Statistics, Modeling', true);
             });
         })();
     </script>

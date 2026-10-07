@@ -134,19 +134,36 @@ export const billingService = {
   async handleWebhook(rawBody, signatureHeader) {
     let event = null;
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     // 1. Validate signature using official Paddle SDK if configured
-    if (paddleClient && paddleWebhookSecretKey && signatureHeader) {
-      try {
-        const rawString = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf8');
-        event = await paddleClient.webhooks.unmarshal(rawString, paddleWebhookSecretKey, signatureHeader);
-      } catch (err) {
-        console.error('[Paddle Webhook] Signature verification failed:', err.message);
-        throw new Error(`Webhook Error: ${err.message}`);
+    if (paddleWebhookSecretKey) {
+      if (!signatureHeader) {
+        throw new Error('Missing Paddle signature header');
       }
+      if (paddleClient) {
+        try {
+          const rawString = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf8');
+          event = await paddleClient.webhooks.unmarshal(rawString, paddleWebhookSecretKey, signatureHeader);
+        } catch (err) {
+          console.error('[Paddle Webhook] Signature verification failed:', err.message);
+          throw new Error(`Webhook Error: ${err.message}`);
+        }
+      } else {
+        throw new Error('Paddle SDK client not initialized for webhook verification');
+      }
+    } else if (isProduction) {
+      throw new Error('Paddle webhook secret key is not configured in production environment.');
     } else {
-      // Direct payload unmarshaling for testing/simulation
+      // Direct payload unmarshaling for testing/simulation in development
       try {
-        event = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
+        if (Buffer.isBuffer(rawBody)) {
+          event = JSON.parse(rawBody.toString('utf8'));
+        } else if (typeof rawBody === 'string') {
+          event = JSON.parse(rawBody);
+        } else {
+          event = rawBody;
+        }
       } catch (err) {
         throw new Error('Invalid webhook JSON payload');
       }
@@ -304,6 +321,16 @@ export function checkSubscriptionAndQuota(req, res, next) {
     req.isPro = true;
     req.subscription = activeSub;
     req.consumeScanQuota = () => {}; // Unlimited for Pro
+    return next();
+  }
+
+  // Allow sample preview without consuming quota or triggering quota lock
+  const isSamplePreviewRequest = req.body?.isSamplePreview && (req.path?.endsWith('/parse-sample') || req.originalUrl?.includes('/parse-sample'));
+  if (isSamplePreviewRequest) {
+    req.isPro = !!activeSub;
+    req.subscription = activeSub;
+    req.usage = db.userUsage.getMonthlyUsage(userId, new Date().toISOString().slice(0, 7));
+    req.consumeScanQuota = () => {};
     return next();
   }
 

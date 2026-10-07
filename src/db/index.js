@@ -136,7 +136,15 @@ function saveDb(data) {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(writableDbPath, JSON.stringify(data, null, 2), 'utf8');
+    const tempFile = `${writableDbPath}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf8');
+    try {
+      fs.renameSync(tempFile, writableDbPath);
+    } catch {
+      // Fallback if atomic rename across mounts or permissions fails
+      fs.writeFileSync(writableDbPath, JSON.stringify(data, null, 2), 'utf8');
+      try { fs.unlinkSync(tempFile); } catch {}
+    }
   } catch (err) {
     console.warn('Notice: DB write skipped due to filesystem constraint (in-memory preserved):', err.message);
   }
@@ -197,12 +205,6 @@ export const db = {
     findByPaddleSubId(subId) {
       const state = loadDb();
       return state.subscriptions.find(s => s.paddleSubscriptionId === subId || s.stripeSubscriptionId === subId) || null;
-    },
-    findByStripeCustomerId(customerId) {
-      return this.findByPaddleCustomerId(customerId);
-    },
-    findByStripeSubId(subId) {
-      return this.findByPaddleSubId(subId);
     },
     upsert(subData) {
       const state = loadDb();
