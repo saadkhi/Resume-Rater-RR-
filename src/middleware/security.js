@@ -13,6 +13,7 @@ export const apiLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { success: false, error: 'Too many requests. Please slow down.' }
 });
 
@@ -21,6 +22,7 @@ export const uploadLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { success: false, error: 'Too many upload requests. Please wait a moment.' }
 });
 
@@ -29,6 +31,7 @@ export const billingLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { success: false, error: 'Too many billing requests. Please wait a moment.' }
 });
 

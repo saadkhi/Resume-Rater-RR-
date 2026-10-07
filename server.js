@@ -1,4 +1,8 @@
 import './src/polyfills.js';
+import * as pdfjsWorker from 'pdfjs-dist/legacy/build/pdf.worker.mjs';
+if (pdfjsWorker && (pdfjsWorker.WorkerMessageHandler || pdfjsWorker.default?.WorkerMessageHandler)) {
+  globalThis.pdfjsWorker = pdfjsWorker;
+}
 import express from 'express';
 import ejs from 'ejs';
 import multer from 'multer';
@@ -20,7 +24,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const isDevMode = !isProduction;
 
 // Trust reverse proxy for accurate client IP resolution behind load balancers/proxies
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 
 // Vercel / Serverless Read-Only File System Compatibility
 const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NOW_REGION);
@@ -318,6 +322,12 @@ function rateResumeSimilarity(resumeVec, jobDescVec) {
 
 let CachedPDFParse = null;
 async function getPDFParseClass() {
+  if (!globalThis.pdfjsWorker) {
+    try {
+      const workerMod = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+      globalThis.pdfjsWorker = workerMod;
+    } catch {}
+  }
   if (!CachedPDFParse) {
     const mod = await import('pdf-parse');
     CachedPDFParse = mod.PDFParse || mod.default?.PDFParse || mod.default;

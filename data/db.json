@@ -44,13 +44,94 @@
       "id": "usg_demo_001",
       "userId": "usr_demo_001",
       "monthYear": "2026-10",
-      "scansUsed": 0,
+      "scansUsed": 1,
       "maxFreeScans": 3,
-      "updatedAt": "2026-10-07T07:32:09.307Z"
+      "updatedAt": "2026-10-07T12:35:49.601Z"
     }
   ],
-  "resumes": [],
-  "evaluations": [],
+  "resumes": [
+    {
+      "id": "res_1791376549601_dqmik",
+      "userId": "usr_demo_001",
+      "title": "resume1",
+      "filename": "resume1.pdf",
+      "fileSizeBytes": 2959,
+      "pageCount": 1,
+      "rawText": "Alex Johnson\nalex.johnson@example.com | (555) 234-5678 | San Francisco, CA | linkedin.com/in/alexjohnson-ml\nSUMMARY\nLead Machine Learning Engineer with 6+ years designing large-scale NLP, PyTorch transformers,\nmultimodal perception systems, and distributed model inference services in cloud environments.\nEDUCATION\nStanford University - Bachelor of Science in Computer Science (2016 - 2020)\nFocus: Artificial Intelligence, Deep Learning, and Mathematical Statistics\nSKILLS\nTechnical Skills: Python, PyTorch, TensorFlow, Scikit-learn, Transformers, CUDA, HuggingFace\nSystems: Docker, Kubernetes, AWS, FastAPI, Ray, Vector Databases, PostgreSQL, Git\nSpecializations: Natural Language Processing, Model Optimization, RLHF, Embeddings, MLOps\nEXPERIENCE\nStaff Machine Learning Engineer - Scale AI (2022 - Present)\n- Led fine-tuning and deployment of vision and language foundation models for enterprise workloads.\n- Architected high-throughput inference microservices reducing p99 latency by 45%.\n- Built automated continuous evaluation harnesses measuring vector alignment and model safety.\nSenior Machine Learning Engineer - Databricks (2020 - 2022)\n- Scaled distributed PyTorch training jobs over multi-node GPU clusters with Ray and Spark.\n- Implemented feature store transformations and automated ETL pipelines for petabyte datasets.\nPROJECTS\nLLM Alignment & Evaluation Engine: Open-source preference optimization harness for frontier LLMs.\nReal-Time Multimodal Search: Semantic vector similarity search engine indexing 50M+ items.\n\n-- 1 of 1 --\n\n",
+      "cleanedText": "Alex Johnson alex johnson 555 234 5678 San Francisco CA linkedin com in alexjohnson ml SUMMARY Lead Machine Learning Engineer with 6 years designing large scale NLP PyTorch transformers multimodal perception systems and distributed model inference services in cloud environments EDUCATION Stanford University Bachelor of Science in Computer Science 2016 2020 Focus Artificial Intelligence Deep Learning and Mathematical Statistics SKILLS Technical Skills Python PyTorch TensorFlow Scikit learn Transformers CUDA HuggingFace Systems Docker Kubernetes AWS FastAPI Ray Vector Databases PostgreSQL Git Specializations Natural Language Processing Model Optimization RLHF Embeddings MLOps EXPERIENCE Staff Machine Learning Engineer Scale AI 2022 Present Led fine tuning and deployment of vision and language foundation models for enterprise workloads Architected high throughput inference microservices reducing p99 latency by 45 Built automated continuous evaluation harnesses measuring vector alignment and model safety Senior Machine Learning Engineer Databricks 2020 2022 Scaled distributed PyTorch training jobs over multi node GPU clusters with Ray and Spark Implemented feature store transformations and automated ETL pipelines for petabyte datasets PROJECTS LLM Alignment Evaluation Engine Open source preference optimization harness for frontier LLMs Real Time Multimodal Search Semantic vector similarity search engine indexing 50M items 1 of 1",
+      "parsedSections": {
+        "Education": "EDUCATION\nStanford University - Bachelor of Science in Computer Science (2016 - 2020)\nFocus: Artificial Intelligence, Deep Learning, and Mathematical Statistics",
+        "Experience": "EXPERIENCE\nStaff Machine Learning Engineer - Scale AI (2022 - Present)\n- Led fine-tuning and deployment of vision and language foundation models for enterprise workloads.\n- Architected high-throughput inference microservices reducing p99 latency by 45%.\n- Built automated continuous evaluation harnesses measuring vector alignment and model safety.\nSenior Machine Learning Engineer - Databricks (2020 - 2022)\n- Scaled distributed PyTorch training jobs over multi-node GPU clusters with Ray and Spark.\n- Implemented feature store transformations and automated ETL pipelines for petabyte datasets.",
+        "Skills": "SKILLS\nTechnical Skills: Python, PyTorch, TensorFlow, Scikit-learn, Transformers, CUDA, HuggingFace\nSystems: Docker, Kubernetes, AWS, FastAPI, Ray, Vector Databases, PostgreSQL, Git\nSpecializations: Natural Language Processing, Model Optimization, RLHF, Embeddings, MLOps",
+        "Projects": "PROJECTS\nLLM Alignment & Evaluation Engine: Open-source preference optimization harness for frontier LLMs.\nReal-Time Multimodal Search: Semantic vector similarity search engine indexing 50M+ items.\n\n-- 1 of 1 --"
+      },
+      "detectedCategory": "Machine Learning Engineer",
+      "createdAt": "2026-10-07T12:35:49.601Z"
+    }
+  ],
+  "evaluations": [
+    {
+      "id": "eval_1791376549601_8q5jv",
+      "userId": "usr_demo_001",
+      "resumeId": "res_1791376549601_dqmik",
+      "targetJobTitle": "Machine Learning Python",
+      "similarityScore": 0.18,
+      "matchRating": "Low Match",
+      "dimensions": [
+        {
+          "dimension": "Cosine Fit",
+          "score": 18,
+          "target": 100,
+          "fullMark": 100
+        },
+        {
+          "dimension": "Key Skills",
+          "score": 15,
+          "target": 100,
+          "fullMark": 100
+        },
+        {
+          "dimension": "Keywords",
+          "score": 100,
+          "target": 100,
+          "fullMark": 100
+        },
+        {
+          "dimension": "Projects",
+          "score": 10,
+          "target": 100,
+          "fullMark": 100
+        },
+        {
+          "dimension": "Domain Scope",
+          "score": 59,
+          "target": 100,
+          "fullMark": 100
+        }
+      ],
+      "keywordGaps": [
+        {
+          "keyword": "Machine",
+          "resumeScore": 20,
+          "jobScore": 100,
+          "matched": true
+        },
+        {
+          "keyword": "Learning",
+          "resumeScore": 24,
+          "jobScore": 93,
+          "matched": true
+        },
+        {
+          "keyword": "Python",
+          "resumeScore": 5,
+          "jobScore": 78,
+          "matched": true
+        }
+      ],
+      "createdAt": "2026-10-07T12:35:49.601Z"
+    }
+  ],
   "webhook_events": [
     {
       "id": "evt_sim_1791269174502",

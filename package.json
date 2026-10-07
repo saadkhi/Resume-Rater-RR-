@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "build": "esbuild src/MatchVisualizer.jsx --bundle --minify --format=iife --outfile=public/match-visualizer.bundle.js"
+    "build": "esbuild src/MatchVisualizer.jsx --bundle --minify --format=iife --outfile=public/match-visualizer.bundle.js && node scripts/create-sample-resumes.js"
   },
   "dependencies": {
     "@paddle/paddle-node-sdk": "^3.10.0",

@@ -262,8 +262,19 @@ if (!globalThis.Path2D) {
   globalThis.Path2D = Path2DPolyfill;
 }
 
+// 5. PDF.js fake worker hook for headless serverless environments (e.g. Vercel)
+try {
+  const pdfjsWorker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+  if (pdfjsWorker && (pdfjsWorker.WorkerMessageHandler || pdfjsWorker.default?.WorkerMessageHandler)) {
+    globalThis.pdfjsWorker = pdfjsWorker;
+  }
+} catch (err) {
+  // best effort
+}
+
 export default {
   DOMMatrix: globalThis.DOMMatrix,
   ImageData: globalThis.ImageData,
-  Path2D: globalThis.Path2D
+  Path2D: globalThis.Path2D,
+  pdfjsWorker: globalThis.pdfjsWorker
 };
