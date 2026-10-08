@@ -600,9 +600,9 @@ app.post('/api/parse-resume', uploadLimiter, checkSubscriptionAndQuota, (req, re
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({ success: false, error: 'File size exceeds 15MB limit. Please upload a smaller PDF.' });
         }
-        return res.status(400).json({ success: false, error: `Upload error: ${err.message}` });
+        return res.status(400).json({ success: false, error: getSafeErrorMessage(err, 'File upload error.') });
       }
-      return res.status(400).json({ success: false, error: err.message || 'File upload failed.' });
+      return res.status(400).json({ success: false, error: getSafeErrorMessage(err, 'File upload failed.') });
     }
     next();
   });
@@ -1023,7 +1023,7 @@ app.post('/upload', uploadLimiter, (req, res, next) => {
     if (err) {
       const msg = (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE')
         ? 'File size exceeds 15MB limit. Please upload a smaller PDF.'
-        : (err.message || 'File upload failed.');
+        : (isDevMode ? (err.message || 'File upload failed.') : 'File upload failed.');
       return renderIndexDashboard(req, res, { error: msg });
     }
     next();

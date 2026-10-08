@@ -92,7 +92,10 @@ export const billingService = {
       }
     }
 
-    // 2. Local Development & Testing Sandbox Flow (Simulated Paddle Transaction)
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Payment processing is not configured. Please contact support.');
+    }
+
     const simTxnId = `txn_sim_${Date.now()}`;
     return {
       transactionId: simTxnId,
@@ -125,6 +128,9 @@ export const billingService = {
       }
     }
 
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Payment processing is not configured.');
+    }
     return { portalUrl: `${returnUrl}/#pricing` };
   },
 

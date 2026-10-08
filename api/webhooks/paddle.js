@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     if (!res.headersSent) {
       res.statusCode = 400;
       res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: err.message || 'Webhook verification failed.' }));
+      return res.end(JSON.stringify({ error: 'Webhook verification failed.' }));
     }
   }
 }
