@@ -3,6 +3,15 @@ import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import { INITIAL_JOBS_DATASET } from './jobs-data.js';
+import {
+  initializeSupabase,
+  getSupabaseStatus,
+  syncUserToSupabase,
+  syncSubscriptionToSupabase,
+  syncUsageToSupabase,
+  syncResumeToSupabase,
+  syncEvaluationToSupabase
+} from './supabase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +28,14 @@ let inMemoryDbState = null;
 const initialDbState = {
   users: [
     {
+      id: 'usr_admin_saad',
+      email: 'saadalioffic@gmail.com',
+      name: 'Saad Ali (Admin)',
+      role: 'admin',
+      isAdmin: true,
+      createdAt: new Date().toISOString()
+    },
+    {
       id: 'usr_demo_001',
       email: 'candidate@example.com',
       name: 'Demo Candidate',
@@ -27,6 +44,19 @@ const initialDbState = {
     }
   ],
   subscriptions: [
+    {
+      id: 'sub_admin_saad',
+      userId: 'usr_admin_saad',
+      paddleCustomerId: 'ctm_admin_saad',
+      paddleSubscriptionId: 'sub_admin_override',
+      paddlePriceId: 'pri_admin_unlimited',
+      paddleTransactionId: 'txn_admin_unrestricted',
+      planTier: 'admin_unlimited',
+      status: 'active',
+      currentPeriodEnd: '2099-12-31T23:59:59.999Z',
+      cancelAtPeriodEnd: false,
+      createdAt: new Date().toISOString()
+    },
     {
       id: 'sub_demo_001',
       userId: 'usr_demo_001',
@@ -173,6 +203,7 @@ export const db = {
       };
       state.users.push(newUser);
       saveDb(state);
+      syncUserToSupabase(newUser).catch(() => {});
       return newUser;
     }
   },
@@ -239,6 +270,7 @@ export const db = {
         state.subscriptions.push(record);
       }
       saveDb(state);
+      syncSubscriptionToSupabase(record).catch(() => {});
       return record;
     }
   },
@@ -280,6 +312,7 @@ export const db = {
         usage.updatedAt = new Date().toISOString();
       }
       saveDb(state);
+      syncUsageToSupabase(usage).catch(() => {});
       return usage;
     },
     setScansUsed(userId, count, monthYear = new Date().toISOString().slice(0, 7)) {
@@ -300,6 +333,7 @@ export const db = {
         usage.updatedAt = new Date().toISOString();
       }
       saveDb(state);
+      syncUsageToSupabase(usage).catch(() => {});
       return usage;
     }
   },
@@ -315,6 +349,7 @@ export const db = {
       };
       state.resumes.push(record);
       saveDb(state);
+      syncResumeToSupabase(record).catch(() => {});
       return record;
     },
     findByUserId(userId) {
@@ -334,6 +369,7 @@ export const db = {
       };
       state.evaluations.push(record);
       saveDb(state);
+      syncEvaluationToSupabase(record).catch(() => {});
       return record;
     },
     findByUserId(userId) {
@@ -426,5 +462,37 @@ export const db = {
       saveDb(state);
       return newJob;
     }
+  },
+  contacts: {
+    getAll() {
+      const state = loadDb();
+      return state.contacts || [];
+    },
+    create(data) {
+      const state = loadDb();
+      if (!state.contacts) state.contacts = [];
+      const newContact = {
+        id: `cnt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        name: data.name?.trim() || '',
+        email: data.email?.trim() || '',
+        subject: data.subject || 'general',
+        message: data.message?.trim() || '',
+        status: 'received',
+        createdAt: new Date().toISOString()
+      };
+      state.contacts.unshift(newContact);
+      saveDb(state);
+      return newContact;
+    }
+  },
+  supabase: {
+    getStatus: getSupabaseStatus,
+    initialize: initializeSupabase
   }
 };
+
+// Initialize Supabase PostgreSQL in background on server boot
+initializeSupabase().catch(err => {
+  console.warn('Notice: Background Supabase init notice:', err.message);
+});
+

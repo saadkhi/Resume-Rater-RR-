@@ -10,11 +10,21 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import { db } from './src/db/index.js';
 import { billingService, checkSubscriptionAndQuota } from './src/services/billing.js';
 import { jobsService } from './src/services/jobs.js';
 import { apiLimiter, uploadLimiter, billingLimiter, getSafeErrorMessage, validatePdfMagicBytes, cleanupFile } from './src/middleware/security.js';
+import {
+  isAdminRequest,
+  getAdminUser,
+  getAdminSubscription,
+  isGlobalAdminOverrideActive,
+  setGlobalAdminOverride,
+  ADMIN_EMAIL
+} from './src/middleware/admin.js';
 
+const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -23,8 +33,8 @@ const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 const isDevMode = !isProduction;
 
-// Trust reverse proxy for accurate client IP resolution behind load balancers/proxies
-app.set('trust proxy', true);
+// Trust 1 hop reverse proxy for accurate client IP resolution behind load balancers/Cloud Run/Vercel
+app.set('trust proxy', 1);
 
 // Vercel / Serverless Read-Only File System Compatibility
 const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NOW_REGION);
@@ -108,10 +118,16 @@ app.set('views', validViewsDirs.length > 0 ? validViewsDirs : path.join(process.
 // Resilient template renderer for serverless environments
 function renderIndexDashboard(req, res, customData = {}) {
   try {
-    const userId = req.headers['x-user-id'] || 'usr_demo_001';
-    const sub = db.subscriptions.findActiveByUserId(userId);
+    const admin = isAdminRequest(req);
+    const userId = admin ? 'usr_admin_saad' : (req.headers['x-user-id'] || 'usr_demo_001');
+    const sub = admin ? getAdminSubscription() : db.subscriptions.findActiveByUserId(userId);
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const usage = db.userUsage.getMonthlyUsage(userId, currentMonth);
+    const usage = admin
+      ? { scansUsed: 0, maxFreeScans: 999999, scansRemaining: 'unlimited' }
+      : db.userUsage.getMonthlyUsage(userId, currentMonth);
+
+    const isPro = admin || !!sub;
+    const planTier = admin ? 'Admin Unlimited' : (sub?.planTier || 'free');
 
     const templateData = {
       error: null,
@@ -120,12 +136,16 @@ function renderIndexDashboard(req, res, customData = {}) {
       numerical_similarity_score: null,
       csv_data: null,
       isDevMode,
+      isAdmin: admin,
+      adminEmail: ADMIN_EMAIL,
       billing: {
-        isPro: !!sub,
-        planTier: sub?.planTier || 'free',
+        isAdmin: admin,
+        isPro: isPro,
+        planTier: planTier,
         scansUsed: usage ? usage.scansUsed : 0,
         maxFreeScans: usage ? usage.maxFreeScans : 3,
-        scansRemaining: sub ? 'unlimited' : Math.max(0, (usage ? usage.maxFreeScans : 3) - (usage ? usage.scansUsed : 0))
+        scansRemaining: isPro ? 'unlimited' : Math.max(0, (usage ? usage.maxFreeScans : 3) - (usage ? usage.scansUsed : 0)),
+        unrestrictedAccess: isPro
       },
       ...customData
     };
@@ -169,6 +189,49 @@ function renderIndexDashboard(req, res, customData = {}) {
   } catch (err) {
     console.error('renderIndexDashboard error:', err);
     return res.status(500).send('<!DOCTYPE html><html><body><h2>Dashboard Load Failure</h2><p>An unexpected error occurred while loading the dashboard.</p></body></html>');
+  }
+}
+
+// Resilient template renderer for legal & static pages (Terms, Privacy, Refund, Contact)
+function renderEjsPage(viewName, req, res, customData = {}) {
+  try {
+    const templateSearchPaths = [
+      path.join(process.cwd(), 'views', `${viewName}.ejs`),
+      path.join(__dirname, 'views', `${viewName}.ejs`),
+      path.join(__dirname, '..', 'views', `${viewName}.ejs`),
+      path.join('/var/task', 'views', `${viewName}.ejs`),
+      path.resolve('views', `${viewName}.ejs`)
+    ];
+
+    let templateContent = null;
+    for (const p of templateSearchPaths) {
+      if (fs.existsSync(p)) {
+        try {
+          templateContent = fs.readFileSync(p, 'utf8');
+          if (templateContent) break;
+        } catch {
+          // continue
+        }
+      }
+    }
+
+    const templateData = { isDevMode, isAdmin: isAdminRequest(req), ...customData };
+
+    if (templateContent) {
+      const html = ejs.render(templateContent, templateData, { views: validViewsDirs });
+      return res.send(html);
+    }
+
+    return res.render(viewName, templateData, (err, html) => {
+      if (err) {
+        console.error(`EJS view rendering error for ${viewName}:`, err);
+        return res.status(500).send(`<!DOCTYPE html><html><body><h2>Error loading ${viewName} page</h2><p>Please try again later.</p></body></html>`);
+      }
+      return res.send(html);
+    });
+  } catch (err) {
+    console.error(`renderEjsPage error for ${viewName}:`, err);
+    return res.status(500).send(`<!DOCTYPE html><html><body><h2>Page Load Error</h2><p>Please try again later.</p></body></html>`);
   }
 }
 
@@ -320,6 +383,18 @@ function rateResumeSimilarity(resumeVec, jobDescVec) {
   return { matchRating, similarityScore };
 }
 
+function getPdfjsAssetPath(subDir) {
+  try {
+    const pkgPath = require.resolve('pdfjs-dist/package.json');
+    const dir = path.join(path.dirname(pkgPath), subDir);
+    if (fs.existsSync(dir)) {
+      return dir.endsWith(path.sep) ? dir : dir + path.sep;
+    }
+  } catch {}
+  const fallback = path.join(__dirname, 'node_modules/pdfjs-dist', subDir);
+  return fallback.endsWith(path.sep) ? fallback : fallback + path.sep;
+}
+
 let CachedPDFParse = null;
 async function getPDFParseClass() {
   if (!globalThis.pdfjsWorker) {
@@ -337,9 +412,16 @@ async function getPDFParseClass() {
 
 async function parsePdfDetails(filePath) {
   try {
-    const fileBuffer = fs.readFileSync(filePath);
+    const fileBuffer = typeof filePath === 'string' ? fs.readFileSync(filePath) : filePath;
     const PDFParser = await getPDFParseClass();
-    const parser = new PDFParser(new Uint8Array(fileBuffer));
+    const standardFontDataUrl = getPdfjsAssetPath('standard_fonts');
+    const cMapUrl = getPdfjsAssetPath('cmaps');
+    const parser = new PDFParser({
+      data: new Uint8Array(fileBuffer),
+      standardFontDataUrl,
+      cMapUrl,
+      cMapPacked: true
+    });
     const result = await parser.getText();
     const text = result?.text || '';
     const pages = result?.total || (result?.pages ? result.pages.length : 1);
@@ -822,24 +904,54 @@ app.get('/api/jobs', apiLimiter, handleJobsRequest);
 app.post('/api/jobs', apiLimiter, handleJobsRequest);
 
 // 6. API: Create Paddle Checkout Session ($5/mo or $39/yr)
-app.post('/api/create-checkout-session', billingLimiter, async (req, res) => {
+app.all('/api/create-checkout-session', billingLimiter, async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+
   try {
-    const userId = req.headers['x-user-id'] || 'usr_demo_001';
-    const { plan } = req.body || {}; // 'monthly' | 'annual'
+    const admin = isAdminRequest(req);
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
     const host = req.get('host');
     const hostUrl = `${protocol}://${host}`;
 
+    // Admin Authentication Override: Instant unrestricted access without requiring payment
+    if (admin) {
+      return res.status(200).json({
+        success: true,
+        isAdmin: true,
+        isPro: true,
+        unrestrictedAccess: true,
+        plan: req.body?.plan || req.query?.plan || 'admin_unlimited',
+        message: 'Admin authentication override active. You have full, unrestricted access to all platform features.',
+        checkoutUrl: `${hostUrl}/?admin=true&unrestricted=active`,
+        transactionId: `txn_admin_${Date.now()}`
+      });
+    }
+
+    if (req.method === 'GET') {
+      return res.status(200).json({
+        success: true,
+        message: 'Use POST /api/create-checkout-session with { plan: "monthly" | "annual" } to create a session.',
+        availablePlans: ['monthly', 'annual']
+      });
+    }
+
+    const userId = req.headers['x-user-id'] || req.body?.userId || 'usr_demo_001';
+    const { plan } = req.body || {}; // 'monthly' | 'annual'
+
     const result = await billingService.createCheckoutSession(userId, plan || 'monthly', hostUrl);
-    res.json({ success: true, ...result });
+    return res.status(200).json({ success: true, ...result });
   } catch (err) {
     console.error('Create checkout session error:', err);
-    res.status(500).json({ success: false, error: getSafeErrorMessage(err, 'Failed to start checkout session.') });
+    return res.status(500).json({ success: false, error: getSafeErrorMessage(err, 'Failed to start checkout session.') });
   }
 });
 
 // 7. API: Customer Portal Session for Managing Subscriptions
 app.post('/api/create-portal-session', billingLimiter, async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   try {
     const userId = req.headers['x-user-id'] || 'usr_demo_001';
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
@@ -847,33 +959,104 @@ app.post('/api/create-portal-session', billingLimiter, async (req, res) => {
     const returnUrl = `${protocol}://${host}`;
 
     const result = await billingService.createPortalSession(userId, returnUrl);
-    res.json({ success: true, ...result });
+    return res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ success: false, error: getSafeErrorMessage(err, 'Failed to create portal session.') });
+    return res.status(500).json({ success: false, error: getSafeErrorMessage(err, 'Failed to create portal session.') });
   }
 });
 
 // 8. API: Subscription & Monthly Quota Status
 app.get('/api/subscription-status', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   try {
-    const userId = req.headers['x-user-id'] || 'usr_demo_001';
-    const sub = db.subscriptions.findActiveByUserId(userId);
+    const admin = isAdminRequest(req);
+    const userId = admin ? 'usr_admin_saad' : (req.headers['x-user-id'] || 'usr_demo_001');
+    const sub = admin ? getAdminSubscription() : db.subscriptions.findActiveByUserId(userId);
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const usage = db.userUsage.getMonthlyUsage(userId, currentMonth);
+    const usage = admin
+      ? { scansUsed: 0, maxFreeScans: 999999 }
+      : db.userUsage.getMonthlyUsage(userId, currentMonth);
 
-    res.json({
+    const isPro = admin || !!sub;
+    return res.json({
       success: true,
       userId,
-      isPro: !!sub,
-      planTier: sub?.planTier || 'free',
-      status: sub?.status || 'inactive',
-      currentPeriodEnd: sub?.currentPeriodEnd || null,
+      email: admin ? ADMIN_EMAIL : 'candidate@example.com',
+      isAdmin: admin,
+      isPro,
+      planTier: admin ? 'admin_unlimited' : (sub?.planTier || 'free'),
+      status: admin ? 'active' : (sub?.status || 'inactive'),
+      currentPeriodEnd: admin ? '2099-12-31T23:59:59.999Z' : (sub?.currentPeriodEnd || null),
       scansUsed: usage.scansUsed,
       maxFreeScans: usage.maxFreeScans,
-      scansRemaining: sub ? 'unlimited' : Math.max(0, usage.maxFreeScans - usage.scansUsed)
+      scansRemaining: isPro ? 'unlimited' : Math.max(0, usage.maxFreeScans - usage.scansUsed),
+      unrestrictedAccess: isPro
     });
   } catch (err) {
-    res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
+    return res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
+  }
+});
+
+// 8b. API: Admin Status & Override Toggle Endpoints
+app.get('/api/admin/status', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  const admin = isAdminRequest(req);
+  return res.json({
+    success: true,
+    isAdmin: admin,
+    globalOverride: isGlobalAdminOverrideActive(),
+    adminEmail: ADMIN_EMAIL,
+    unrestrictedAccess: admin,
+    message: admin ? 'Admin override active. Full platform access enabled.' : 'Admin override inactive.'
+  });
+});
+
+app.post('/api/admin/toggle-override', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  const currentState = isGlobalAdminOverrideActive();
+  const newState = req.body?.enable !== undefined ? !!req.body.enable : !currentState;
+  setGlobalAdminOverride(newState);
+  return res.json({
+    success: true,
+    isAdmin: newState,
+    globalOverride: newState,
+    message: newState
+      ? 'Admin authentication override activated. Unrestricted access granted to all features.'
+      : 'Admin authentication override deactivated.'
+  });
+});
+
+// 8c. API: Supabase PostgreSQL Database Status & Health Check
+app.get('/api/supabase/status', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  try {
+    const status = db.supabase.getStatus();
+    return res.json({
+      success: true,
+      supabase: status,
+      connectionDetails: {
+        host: 'db.medvnbynodmsjaqvtjzl.supabase.co',
+        port: 5432,
+        database: 'postgres',
+        user: 'postgres',
+        ssl: true
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
+  }
+});
+
+app.post('/api/supabase/test', async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  try {
+    const result = await db.supabase.initialize();
+    return res.json({
+      success: true,
+      supabase: result
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
   }
 });
 
@@ -1015,6 +1198,93 @@ app.post('/api/test/simulate-webhook', async (req, res) => {
 // Routes
 app.get('/', (req, res) => renderIndexDashboard(req, res));
 
+// Legal & Compliance Pages
+app.get('/terms', (req, res) => renderEjsPage('terms', req, res));
+app.get('/terms-of-service', (req, res) => res.redirect(301, '/terms'));
+
+app.get('/privacy', (req, res) => renderEjsPage('privacy', req, res));
+app.get('/privacy-policy', (req, res) => res.redirect(301, '/privacy'));
+
+app.get('/refund', (req, res) => renderEjsPage('refund', req, res));
+app.get('/refund-policy', (req, res) => res.redirect(301, '/refund'));
+
+// Contact Page & Support Form Handler
+app.get('/contact', (req, res) => {
+  renderEjsPage('contact', req, res, {
+    submitted: false,
+    success: false,
+    error: null,
+    name: '',
+    email: '',
+    subject: 'general',
+    message: ''
+  });
+});
+
+app.post('/contact', apiLimiter, (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body || {};
+
+    if (!email || !message) {
+      if (req.accepts('json') && !req.accepts('html')) {
+        return res.status(400).json({ success: false, error: 'Email and message are required.' });
+      }
+      return renderEjsPage('contact', req, res, {
+        submitted: false,
+        success: false,
+        error: 'Please provide both your email address and message.',
+        name: name || '',
+        email: email || '',
+        subject: subject || 'general',
+        message: message || ''
+      });
+    }
+
+    // Save contact entry in DB
+    const savedContact = db.contacts.create({
+      name: name || 'Anonymous',
+      email,
+      subject: subject || 'general',
+      message
+    });
+
+    console.log(`[Contact Support] New message received from ${email} (${subject}):`, savedContact.id);
+
+    if (req.accepts('json') && !req.accepts('html')) {
+      return res.json({
+        success: true,
+        message: 'Your support inquiry has been received. We will respond promptly.',
+        contactId: savedContact.id
+      });
+    }
+
+    return renderEjsPage('contact', req, res, {
+      submitted: true,
+      success: true,
+      error: null,
+      senderEmail: email,
+      name: '',
+      email: '',
+      subject: 'general',
+      message: ''
+    });
+  } catch (err) {
+    console.error('Contact submission error:', err);
+    if (req.accepts('json') && !req.accepts('html')) {
+      return res.status(500).json({ success: false, error: 'Failed to process support request.' });
+    }
+    return renderEjsPage('contact', req, res, {
+      submitted: false,
+      success: false,
+      error: 'An unexpected error occurred while sending your message. Please email saadalioffic@gmail.com directly.',
+      name: req.body?.name || '',
+      email: req.body?.email || '',
+      subject: req.body?.subject || 'general',
+      message: req.body?.message || ''
+    });
+  }
+});
+
 app.post('/upload', uploadLimiter, (req, res, next) => {
   upload.fields([
     { name: 'resume', maxCount: 1 },
@@ -1037,17 +1307,20 @@ app.post('/upload', uploadLimiter, (req, res, next) => {
     if (resumeFile) uploadedFiles.push(resumeFile.path);
     if (jobDescriptionFile) uploadedFiles.push(jobDescriptionFile.path);
 
-    const userId = req.headers['x-user-id'] || 'usr_demo_001';
-    let user = db.users.find(userId);
+    const admin = isAdminRequest(req);
+    const userId = admin ? 'usr_admin_saad' : (req.headers['x-user-id'] || 'usr_demo_001');
+    let user = admin ? getAdminUser() : db.users.find(userId);
     if (!user) {
-      user = db.users.create({ id: userId, email: 'candidate@example.com', name: 'Demo Candidate' });
+      user = db.users.create({ id: userId, email: admin ? ADMIN_EMAIL : 'candidate@example.com', name: admin ? 'Saad Ali (Admin)' : 'Demo Candidate' });
     }
-    const sub = db.subscriptions.findActiveByUserId(userId);
+    const sub = admin ? getAdminSubscription() : db.subscriptions.findActiveByUserId(userId);
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const usage = db.userUsage.getMonthlyUsage(userId, currentMonth);
+    const usage = admin
+      ? { scansUsed: 0, maxFreeScans: 999999, scansRemaining: 'unlimited' }
+      : db.userUsage.getMonthlyUsage(userId, currentMonth);
 
-    // Enforce 403 status code if on free tier and scan limit reached
-    if (!sub && usage.scansUsed >= usage.maxFreeScans) {
+    // Enforce 403 status code if on free tier and scan limit reached (bypassed for Admin)
+    if (!admin && !sub && usage.scansUsed >= usage.maxFreeScans) {
       if (req.headers.accept?.includes('application/json')) {
         return res.status(403).json({
           success: false,
@@ -1146,11 +1419,13 @@ app.post('/upload', uploadLimiter, (req, res, next) => {
     };
     saveToCsv(csvData);
 
-    // Consume scan quota for free user
-    if (!sub) {
+    // Consume scan quota for free user (bypassed for Admin and active subscribers)
+    if (!admin && !sub) {
       db.userUsage.incrementScan(userId, currentMonth);
     }
-    const updatedUsage = db.userUsage.getMonthlyUsage(userId, currentMonth);
+    const updatedUsage = admin
+      ? { scansUsed: 0, maxFreeScans: 999999 }
+      : db.userUsage.getMonthlyUsage(userId, currentMonth);
 
     // Persist to database
     const savedResume = db.resumes.create({
@@ -1182,18 +1457,22 @@ app.post('/upload', uploadLimiter, (req, res, next) => {
       { Section: 'Projects', Content: resumeSections.Projects }
     ];
 
+    const isPro = admin || !!sub;
     return renderIndexDashboard(req, res, {
       error: null,
       prediction_category: predictionId,
       resume_match_rating: matchRating,
       numerical_similarity_score: roundedSimilarityScore,
       csv_data: csvDataForTemplate,
+      isAdmin: admin,
       billing: {
-        isPro: !!sub,
-        planTier: sub?.planTier || 'free',
+        isAdmin: admin,
+        isPro: isPro,
+        planTier: admin ? 'Admin Unlimited' : (sub?.planTier || 'free'),
         scansUsed: updatedUsage.scansUsed,
         maxFreeScans: updatedUsage.maxFreeScans,
-        scansRemaining: sub ? 'unlimited' : Math.max(0, updatedUsage.maxFreeScans - updatedUsage.scansUsed)
+        scansRemaining: isPro ? 'unlimited' : Math.max(0, updatedUsage.maxFreeScans - updatedUsage.scansUsed),
+        unrestrictedAccess: isPro
       }
     });
   } catch (err) {
@@ -1213,15 +1492,37 @@ app.post('/upload', uploadLimiter, (req, res, next) => {
 // Train classifier on startup
 trainClassifier();
 
+// Dedicated API 404 handler: Ensures any unhandled /api/* request receives JSON, NEVER HTML
+app.use('/api', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(404).json({
+    success: false,
+    error: `API route not found: ${req.method} ${req.originalUrl || req.url}`
+  });
+});
+
 // Global Express error handler to prevent serverless function crashes
 app.use((err, req, res, next) => {
   console.error('Global Server Error:', err);
   if (res.headersSent) {
     return next(err);
   }
+
+  // All API routes, AJAX/fetch requests, or Accept: application/json MUST receive JSON, NEVER HTML
+  const isApiRoute = req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json');
+  if (isApiRoute) {
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(err.status || 500).json({
+      success: false,
+      error: getSafeErrorMessage(err, 'An unexpected server error occurred.')
+    });
+  }
+
   if (req.accepts('html')) {
     return res.status(500).send('<!DOCTYPE html><html><body><h2>Resume Rater Server Error</h2><p>An unexpected error occurred. Please try again.</p></body></html>');
   }
+
+  res.setHeader('Content-Type', 'application/json');
   return res.status(500).json({ success: false, error: getSafeErrorMessage(err) });
 });
 

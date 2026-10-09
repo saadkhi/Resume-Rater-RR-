@@ -1,5 +1,6 @@
 import { Paddle, Environment } from '@paddle/paddle-node-sdk';
 import { db } from '../db/index.js';
+import { isAdminRequest, getAdminUser, getAdminSubscription } from '../middleware/admin.js';
 
 const paddleApiKey = process.env.PADDLE_API_KEY;
 const paddleWebhookSecretKey = process.env.PADDLE_WEBHOOK_SECRET_KEY;
@@ -10,6 +11,17 @@ const paddleEnvironment = paddleEnvString === 'production' ? Environment.product
 const paddleClient = paddleApiKey ? new Paddle(paddleApiKey, { environment: paddleEnvironment }) : null;
 
 export const PLANS = {
+  FREE: {
+    id: 'free_starter',
+    name: 'Free Starter',
+    price: 0,
+    interval: 'month',
+    features: [
+      '3 complimentary ATS scans / month',
+      'Basic TF-IDF similarity score',
+      'Standard CV section parser (Education, Experience, Skills, Projects)'
+    ]
+  },
   MONTHLY: {
     id: 'pro_monthly',
     name: 'Pro Monthly',
@@ -17,16 +29,31 @@ export const PLANS = {
     interval: 'month',
     paddlePriceId: process.env.PADDLE_PRICE_ID_PRO_MONTHLY || 'pri_pro_monthly_5usd',
     // Backward-compatible alias
-    stripePriceId: process.env.PADDLE_PRICE_ID_PRO_MONTHLY || 'pri_pro_monthly_5usd'
+    stripePriceId: process.env.PADDLE_PRICE_ID_PRO_MONTHLY || 'pri_pro_monthly_5usd',
+    features: [
+      'Unlimited PDF & DOCX ATS scans',
+      'Multi-dimensional Recharts competency radar',
+      'Real-time keyword frequency gap analyzer',
+      'Export parsed sections & match dossiers',
+      'Direct Paddle Customer Portal access',
+      'Cancel anytime with zero lock-in'
+    ]
   },
   ANNUAL: {
     id: 'pro_annual',
     name: 'Pro Annual',
     price: 39,
     interval: 'year',
+    discountPill: 'Save 35% (~$3.25/mo)',
     paddlePriceId: process.env.PADDLE_PRICE_ID_PRO_ANNUAL || 'pri_pro_annual_39usd',
     // Backward-compatible alias
-    stripePriceId: process.env.PADDLE_PRICE_ID_PRO_ANNUAL || 'pri_pro_annual_39usd'
+    stripePriceId: process.env.PADDLE_PRICE_ID_PRO_ANNUAL || 'pri_pro_annual_39usd',
+    features: [
+      'All Pro Monthly features included',
+      'Priority vectorization throughput',
+      'Unlimited version history exports',
+      'Best value: save 35% compared to monthly'
+    ]
   }
 };
 
@@ -313,6 +340,24 @@ export const billingService = {
  * Subscription & Quota Enforcement Middleware
  */
 export function checkSubscriptionAndQuota(req, res, next) {
+  // 0. Admin Authentication Override (Full Unrestricted Access Bypass)
+  if (isAdminRequest(req)) {
+    const adminUser = getAdminUser();
+    const adminSub = getAdminSubscription();
+    req.user = adminUser;
+    req.isAdmin = true;
+    req.isPro = true;
+    req.subscription = adminSub;
+    req.usage = {
+      scansUsed: 0,
+      maxFreeScans: 999999,
+      scansRemaining: 'unlimited',
+      monthYear: new Date().toISOString().slice(0, 7)
+    };
+    req.consumeScanQuota = () => {}; // Unlimited bypass for Admin
+    return next();
+  }
+
   // Resolve current user (from header, cookie, or default demo candidate)
   const userId = req.headers['x-user-id'] || req.cookies?.user_id || 'usr_demo_001';
   let user = db.users.find(userId);

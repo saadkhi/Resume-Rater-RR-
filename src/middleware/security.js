@@ -1,5 +1,6 @@
 import fs from 'fs';
 import rateLimit from 'express-rate-limit';
+import { isAdminRequest } from './admin.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -10,29 +11,41 @@ export function getSafeErrorMessage(err, fallback = 'An unexpected error occurre
 
 export const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 60,
+  max: 120,
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
-  message: { success: false, error: 'Too many requests. Please slow down.' }
+  validate: { trustProxy: false, xForwardedForHeader: false },
+  skip: (req) => isAdminRequest(req),
+  handler: (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.status(429).json({ success: false, error: 'Too many requests. Please slow down.' });
+  }
 });
 
 export const uploadLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 10,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
-  message: { success: false, error: 'Too many upload requests. Please wait a moment.' }
+  validate: { trustProxy: false, xForwardedForHeader: false },
+  skip: (req) => isAdminRequest(req),
+  handler: (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.status(429).json({ success: false, error: 'Too many upload requests. Please wait a moment.' });
+  }
 });
 
 export const billingLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 5,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
-  message: { success: false, error: 'Too many billing requests. Please wait a moment.' }
+  validate: { trustProxy: false, xForwardedForHeader: false },
+  skip: (req) => isAdminRequest(req),
+  handler: (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.status(429).json({ success: false, error: 'Too many billing requests. Please wait a moment.' });
+  }
 });
 
 export function validatePdfMagicBytes(filePath) {

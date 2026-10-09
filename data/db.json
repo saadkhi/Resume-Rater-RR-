@@ -6,6 +6,13 @@
       "name": "Demo Candidate",
       "role": "user",
       "createdAt": "2026-10-06T06:45:59.413Z"
+    },
+    {
+      "id": "usr_admin_saad",
+      "email": "saadalioffic@gmail.com",
+      "name": "Saad Ali (Platform Admin)",
+      "role": "admin",
+      "createdAt": "2026-10-09T22:40:24.128Z"
     }
   ],
   "subscriptions": [
@@ -46,9 +53,17 @@
       "id": "usg_demo_001",
       "userId": "usr_demo_001",
       "monthYear": "2026-10",
-      "scansUsed": 1,
+      "scansUsed": 2,
       "maxFreeScans": 3,
-      "updatedAt": "2026-10-07T12:35:49.601Z"
+      "updatedAt": "2026-10-09T22:24:24.433Z"
+    },
+    {
+      "id": "usg_1791585624310_wn9fo",
+      "userId": "usr_admin_saad",
+      "monthYear": "2026-10",
+      "scansUsed": 0,
+      "maxFreeScans": 3,
+      "updatedAt": "2026-10-09T22:40:24.310Z"
     }
   ],
   "resumes": [
@@ -930,6 +945,26 @@
         "Performance Testing"
       ],
       "description": "Architect automated end-to-end regression frameworks and performance benchmarks for Foundry enterprise data platforms. Build parallelized Playwright test runners integrating with continuous deployment gates."
+    }
+  ],
+  "contacts": [
+    {
+      "id": "cnt_1791584360163_99v9g",
+      "name": "Saad Ali",
+      "email": "saadalioffic@gmail.com",
+      "subject": "billing",
+      "message": "Testing form submission",
+      "status": "received",
+      "createdAt": "2026-10-09T22:19:20.163Z"
+    },
+    {
+      "id": "cnt_1791584350956_81yia",
+      "name": "Saad Ali",
+      "email": "saadalioffic@gmail.com",
+      "subject": "general",
+      "message": "Hello from testing contact form",
+      "status": "received",
+      "createdAt": "2026-10-09T22:19:10.956Z"
     }
   ]
 }

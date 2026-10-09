@@ -9,12 +9,14 @@
   },
   "dependencies": {
     "@paddle/paddle-node-sdk": "^3.10.0",
+    "@supabase/supabase-js": "^2.117.3",
     "ejs": "^7.0.1",
     "esbuild": "^0.28.2",
     "express": "^5.2.1",
     "express-rate-limit": "^7.4.0",
     "multer": "^2.4.0",
     "pdf-parse": "^2.4.5",
+    "pg": "^8.23.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "recharts": "^3.10.1"
