@@ -450,6 +450,10 @@ export function MatchVisualizer({ match, resumeCategory, candidateName }) {
   );
 }
 
+import { ResumeRosterDashboard } from './templates/ResumeRosterDashboard.jsx';
+
+export { ResumeRosterDashboard };
+
 // Global mount helper for seamless invocation from HTML / vanilla scripts
 window.renderMatchVisualizer = function(containerId, data) {
   const container = document.getElementById(containerId);
@@ -468,5 +472,22 @@ window.renderMatchVisualizer = function(containerId, data) {
       resumeCategory: data?.category || null,
       candidateName: data?.filename || null
     })
+  );
+};
+
+// Global mount helper for Resume Roster Dashboard
+window.renderResumeRosterDashboard = function(containerId, props = {}) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.warn('ResumeRosterDashboard container not found:', containerId);
+    return;
+  }
+
+  if (!container._reactRoot) {
+    container._reactRoot = createRoot(container);
+  }
+
+  container._reactRoot.render(
+    React.createElement(ResumeRosterDashboard, props)
   );
 };

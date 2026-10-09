@@ -12,14 +12,16 @@
     {
       "id": "sub_demo_001",
       "userId": "usr_demo_001",
-      "stripeCustomerId": "cus_demo_usr_demo_001",
-      "stripeSubscriptionId": null,
-      "stripePriceId": null,
+      "paddleCustomerId": "ctm_demo_usr_demo_001",
+      "paddleSubscriptionId": "sub_sim_1791444684985",
+      "paddleTransactionId": "txn_sim_1791444684985",
+      "stripeCustomerId": "ctm_demo_usr_demo_001",
+      "stripeSubscriptionId": "sub_sim_1791444684985",
       "planTier": "free",
       "status": "inactive",
       "currentPeriodEnd": null,
       "cancelAtPeriodEnd": false,
-      "updatedAt": "2026-10-06T06:46:29.669Z",
+      "updatedAt": "2026-10-08T07:31:51.900Z",
       "createdAt": "2026-10-06T06:45:59.413Z"
     },
     {
@@ -181,6 +183,26 @@
       },
       "status": "processed",
       "receivedAt": "2026-10-07T10:44:26.845Z"
+    },
+    {
+      "id": "evt_sim_1791444684985",
+      "eventType": "transaction.completed",
+      "payload": {
+        "id": "txn_sim_1791444684985",
+        "customerId": "ctm_sim_usr_demo_001",
+        "subscriptionId": "sub_sim_1791444684985",
+        "customData": {
+          "userId": "usr_demo_001",
+          "planType": "monthly"
+        },
+        "details": {
+          "totals": {
+            "total": "500"
+          }
+        }
+      },
+      "status": "processed",
+      "receivedAt": "2026-10-08T07:31:24.985Z"
     }
   ],
   "jobs": [
